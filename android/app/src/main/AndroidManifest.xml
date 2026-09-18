@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Escaneo de códigos QR/barras para identificar celdas -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Foto de evidencia de la celda -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:label="CeldaPro"
         android:name="${applicationName}"
