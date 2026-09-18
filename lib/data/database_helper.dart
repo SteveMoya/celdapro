@@ -7,7 +7,7 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static const _dbName = 'celdapro.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   static const tableLotes = 'lotes';
   static const tableCeldas = 'celdas';
@@ -30,6 +30,17 @@ class DatabaseHelper {
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: (db, version) async => _createAll(db),
+      onUpgrade: (db, oldVersion, newVersion) async {
+        // v2: referencia del catálogo de celdas y resistencia interna nominal.
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE $tableCeldas ADD COLUMN catalog_ref TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE $tableCeldas ADD COLUMN ir_nominal_mohm REAL',
+          );
+        }
+      },
     );
   }
 
@@ -63,6 +74,8 @@ class DatabaseHelper {
         ubicacion TEXT,
         foto_path TEXT,
         notas TEXT,
+        catalog_ref TEXT,
+        ir_nominal_mohm REAL,
         created_at INTEGER NOT NULL
       )
     ''');

@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/classification.dart';
 import '../../core/theme.dart';
+import '../../data/cell_catalog.dart';
 import '../../data/models/celda.dart';
 import '../../data/models/cell_test.dart';
 import '../../data/models/lote.dart';
 import '../../state/celda_controller.dart';
+import '../catalog/catalogo_screen.dart';
 import '../widgets/verdict_chip.dart';
 
 /// Alta y edición de una celda. Opcionalmente registra la primera medición
@@ -44,6 +46,9 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
   bool _saving = false;
   bool _registrarMedicion = false;
 
+  /// Ficha del catálogo elegida (battery-tool), si la hay.
+  CellCatalogEntry? _catalogo;
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +76,31 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
     final codigo = await context.read<CeldaController>().suggestCodigo();
     if (mounted) setState(() => _codigoCtrl.text = codigo);
   }
+
+  /// Abre el catálogo y pre-rellena la ficha técnica del modelo elegido.
+  Future<void> _elegirDelCatalogo() async {
+    final entry = await Navigator.of(context).push<CellCatalogEntry>(
+      MaterialPageRoute(builder: (_) => const CatalogoScreen()),
+    );
+    if (entry == null || !mounted) return;
+    setState(() {
+      _catalogo = entry;
+      _marcaCtrl.text = entry.brand;
+      _modeloCtrl.text = entry.model;
+      _quimica = entry.chemistry;
+      _nominalCtrl.text = '${entry.capacityMah}';
+      _voltajeCtrl.text = _num(entry.voltage);
+      _sugerirCodigoSiVacio();
+    });
+  }
+
+  void _sugerirCodigoSiVacio() {
+    if (_codigoCtrl.text.isEmpty) _sugerirCodigo();
+  }
+
+  /// Formatea un double sin ceros sobrantes (3.6 → "3.6", 4.0 → "4").
+  static String _num(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v';
 
   @override
   void dispose() {
@@ -118,6 +148,15 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
+            // Catálogo de celdas (base de battery-tool).
+            _CatalogoPicker(
+              seleccion: _catalogo,
+              onElegir: _elegirDelCatalogo,
+              onQuitar: _catalogo == null
+                  ? null
+                  : () => setState(() => _catalogo = null),
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _codigoCtrl,
               textCapitalization: TextCapitalization.characters,
@@ -344,6 +383,8 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
           _ubicacionCtrl.text.trim().isEmpty ? null : _ubicacionCtrl.text.trim(),
       fotoPath: widget.celda?.fotoPath,
       notas: _notasCtrl.text.trim().isEmpty ? null : _notasCtrl.text.trim(),
+      catalogRef: _catalogo?.name ?? widget.celda?.catalogRef,
+      irNominalMohm: _catalogo?.irMohm ?? widget.celda?.irNominalMohm,
       createdAt: widget.celda?.createdAt ?? DateTime.now(),
     );
 
@@ -445,6 +486,107 @@ class _PreviewBox extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Selector de modelo del catálogo de referencia (base de battery-tool).
+class _CatalogoPicker extends StatelessWidget {
+  const _CatalogoPicker({
+    required this.seleccion,
+    required this.onElegir,
+    this.onQuitar,
+  });
+
+  final CellCatalogEntry? seleccion;
+  final VoidCallback onElegir;
+  final VoidCallback? onQuitar;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final e = seleccion;
+
+    return Card(
+      color: e == null ? null : scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.menu_book_outlined,
+                  color: e == null ? scheme.primary : scheme.onPrimaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Modelo del catálogo',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: e == null ? null : scheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                if (onQuitar != null)
+                  IconButton(
+                    tooltip: 'Quitar referencia',
+                    icon: const Icon(Icons.close, size: 18),
+                    color: scheme.onPrimaryContainer,
+                    onPressed: onQuitar,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            if (e == null) ...[
+              Text(
+                'Elige tu modelo (102 celdas comerciales) y la capacidad '
+                'nominal, el voltaje y la resistencia de fábrica se rellenan solos.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: onElegir,
+                  icon: const Icon(Icons.search),
+                  label: const Text('Buscar modelo'),
+                ),
+              ),
+            ] else ...[
+              Text(
+                e.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '${e.capacityMah} mAh · ${e.voltage} V · ${e.irMohm} mΩ '
+                'de fábrica',
+                style: TextStyle(color: scheme.onPrimaryContainer),
+              ),
+              Text(
+                'Formato ${e.format} · ${e.chemistry.label}'
+                '${e.maxDischargeA == null ? '' : ' · descarga ${e.maxDischargeA} A'}',
+                style: TextStyle(color: scheme.onPrimaryContainer),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onElegir,
+                  icon: const Icon(Icons.swap_horiz, size: 18),
+                  label: const Text('Cambiar modelo'),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

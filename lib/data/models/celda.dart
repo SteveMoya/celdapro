@@ -60,6 +60,8 @@ class Celda {
     this.ubicacion,
     this.fotoPath,
     this.notas,
+    this.catalogRef,
+    this.irNominalMohm,
     required this.createdAt,
   });
 
@@ -81,6 +83,13 @@ class Celda {
   final String? ubicacion;
   final String? fotoPath;
   final String? notas;
+
+  /// Nombre del modelo en el catálogo de referencia (battery-tool), si se eligió.
+  final String? catalogRef;
+
+  /// Resistencia interna de fábrica (mΩ) — referencia para diagnosticar.
+  final double? irNominalMohm;
+
   final DateTime createdAt;
 
   Celda copyWith({
@@ -100,6 +109,8 @@ class Celda {
     String? ubicacion,
     String? fotoPath,
     String? notas,
+    String? catalogRef,
+    double? irNominalMohm,
     DateTime? createdAt,
   }) =>
       Celda(
@@ -119,6 +130,8 @@ class Celda {
         ubicacion: ubicacion ?? this.ubicacion,
         fotoPath: fotoPath ?? this.fotoPath,
         notas: notas ?? this.notas,
+        catalogRef: catalogRef ?? this.catalogRef,
+        irNominalMohm: irNominalMohm ?? this.irNominalMohm,
         createdAt: createdAt ?? this.createdAt,
       );
 
@@ -139,6 +152,8 @@ class Celda {
         'ubicacion': ubicacion,
         'foto_path': fotoPath,
         'notas': notas,
+        'catalog_ref': catalogRef,
+        'ir_nominal_mohm': irNominalMohm,
         'created_at': createdAt.millisecondsSinceEpoch,
       };
 
@@ -163,6 +178,8 @@ class Celda {
         ubicacion: m['ubicacion'] as String?,
         fotoPath: m['foto_path'] as String?,
         notas: m['notas'] as String?,
+        catalogRef: m['catalog_ref'] as String?,
+        irNominalMohm: (m['ir_nominal_mohm'] as num?)?.toDouble(),
         createdAt: DateTime.fromMillisecondsSinceEpoch(
           (m['created_at'] as int?) ?? 0,
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/classification.dart';
+import '../../core/diagnostics.dart';
 import '../../core/theme.dart';
 import '../../data/models/celda.dart';
 import '../../data/models/cell_test.dart';
@@ -67,6 +68,12 @@ class _TestFormScreenState extends State<TestFormScreen> {
         measuredMah: _parse(_medidaCtrl.text),
         nominalMah: widget.celda.capacidadNominalMah,
         thresholds: context.read<CeldaController>().thresholds,
+      );
+
+  /// Diagnóstico de la resistencia interna frente a la de fábrica.
+  IrAssessment get _irDiagnostico => assessInternalResistance(
+        measuredMohm: _parse(_irCtrl.text),
+        nominalMohm: widget.celda.irNominalMohm,
       );
 
   @override
@@ -250,6 +257,13 @@ class _TestFormScreenState extends State<TestFormScreen> {
               ),
             ),
 
+            // Diagnóstico de resistencia interna (vs. el catálogo).
+            if (_irDiagnostico.level != IrLevel.unknown &&
+                _irDiagnostico.measuredMohm != null) ...[
+              const SizedBox(height: 12),
+              _IrDiagnosticoBox(assessment: _irDiagnostico),
+            ],
+
             const SizedBox(height: 22),
             SizedBox(
               width: double.infinity,
@@ -296,5 +310,67 @@ class _TestFormScreenState extends State<TestFormScreen> {
         SnackBar(content: Text('No se pudo guardar el test: $e')),
       );
     }
+  }
+}
+
+/// Muestra el diagnóstico de resistencia interna contra la de fábrica.
+class _IrDiagnosticoBox extends StatelessWidget {
+  const _IrDiagnosticoBox({required this.assessment});
+
+  final IrAssessment assessment;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = switch (assessment.level) {
+      IrLevel.ok => scheme.primary,
+      IrLevel.high => const Color(0xFFF9A825),
+      IrLevel.veryHigh => scheme.error,
+      IrLevel.unknown => scheme.outline,
+    };
+    final icon = switch (assessment.level) {
+      IrLevel.ok => Icons.check_circle_outline,
+      IrLevel.high => Icons.warning_amber_rounded,
+      IrLevel.veryHigh => Icons.error_outline,
+      IrLevel.unknown => Icons.help_outline,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Resistencia interna: ${assessment.level.label}',
+                  style: TextStyle(color: color, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${assessment.measuredMohm} mΩ medidas frente a '
+                  '${assessment.nominalMohm} mΩ de fábrica '
+                  '(${formatIrRatio(assessment.ratio)})',
+                ),
+                Text(
+                  assessment.level.description,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -8,11 +8,16 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · escaneo QR/código de barras ·
 
 ## ✨ Funcionalidades
 
+- 📚 **Catálogo de 102 celdas comerciales** (portado del proyecto `battery-tool`): eliges tu modelo
+  y se rellenan solos la marca, el modelo, la química, la **capacidad nominal** (referencia del SoH),
+  el voltaje y la **resistencia interna de fábrica**.
 - 🏷️ **Inventario de celdas** con código interno único, QR, marca, modelo, química y ubicación.
 - 📦 **Lotes**: agrupa celdas por origen/compra y mide su rendimiento.
 - 🧪 **Tests de medición**: capacidad (mAh), voltaje, resistencia interna, ciclos, corriente, temperatura.
 - 🎯 **Clasificación automática** por SoH (*capacidad medida ÷ nominal*) con **umbrales configurables**
   (por defecto A ≥ 90 %, B ≥ 75 %, C ≥ 60 %, por debajo rechazo).
+- ⚡ **Diagnóstico de resistencia interna**: compara lo medido con la resistencia de fábrica del
+  catálogo y avisa de desgaste (Normal / Elevada / Muy alta) aunque la capacidad aún parezca bien.
 - 🔄 **Flujo por celda**: `Recepcionada → En test → Clasificada → Balanceada → Reempacada → Aprobada QA`
   (o `Rechazada` con motivo).
 - 📜 **Trazabilidad**: cada cambio de estado y cada test queda registrado con fecha.
@@ -44,8 +49,10 @@ flutter build apk --release --split-per-abi
 lib/
 ├── core/
 │   ├── theme.dart            # Material 3 (verde litio #2E7D32)
-│   └── classification.dart   # SoH + veredicto (lógica pura, testeada)
+│   ├── classification.dart   # SoH + veredicto (lógica pura, testeada)
+│   └── diagnostics.dart      # Diagnóstico de resistencia interna
 ├── data/
+│   ├── cell_catalog.dart     # 102 celdas comerciales (de battery-tool)
 │   ├── models/               # lote, celda, cell_test, cell_event
 │   ├── repositories/         # CRUD sobre SQLite
 │   ├── database_helper.dart  # esquema + migraciones
@@ -53,6 +60,13 @@ lib/
 ├── services/                 # fotos, QR, CSV
 ├── state/                    # controladores (provider)
 └── features/                 # pantallas Material 3
+    ├── catalog/              # catálogo de celdas comerciales
+    ├── dashboard/            # métricas
+    ├── inventory/            # lista, detalle, formularios, escáner
+    ├── lotes/                # lotes
+    └── settings/             # umbrales, CSV, privacidad
+
+tools/generar_catalogo.py     # regenera cell_catalog.dart desde battery-tool
 ```
 
 ## ⚠️ Aviso de seguridad

@@ -196,6 +196,7 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
               padding: const EdgeInsets.all(4),
               child: Column(
                 children: [
+                  _row(context, 'Modelo de referencia', celda.catalogRef),
                   _row(context, 'Lote', _loteName(celda)),
                   _row(context, 'Marca', celda.marca),
                   _row(context, 'Modelo', celda.modelo),
@@ -213,6 +214,13 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
                     celda.voltajeNominal == null
                         ? null
                         : '${celda.voltajeNominal} V',
+                  ),
+                  _row(
+                    context,
+                    'Resistencia de fábrica',
+                    celda.irNominalMohm == null
+                        ? null
+                        : '${celda.irNominalMohm} mΩ',
                   ),
                   _row(context, 'QR', celda.qr),
                   _row(context, 'Ubicación', celda.ubicacion),
