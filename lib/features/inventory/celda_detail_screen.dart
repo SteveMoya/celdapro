@@ -11,6 +11,7 @@ import '../../data/models/cell_event.dart';
 import '../../data/models/cell_test.dart';
 import '../../services/photo_service.dart';
 import '../../state/celda_controller.dart';
+import '../labels/label_screen.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -87,8 +88,17 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'delete') _confirmDelete(celda);
+              if (v == 'label') _etiqueta(celda);
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'label',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.qr_code_2_outlined),
+                  title: Text('Etiqueta e imprimir'),
+                ),
+              ),
               PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
@@ -410,6 +420,17 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
         SnackBar(content: Text('No se pudo guardar la foto: $e')),
       );
     }
+  }
+
+  Future<void> _etiqueta(Celda celda) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => LabelScreen(
+          celdas: [celda],
+          titulo: 'Etiqueta ${celda.codigoInterno}',
+        ),
+      ),
+    );
   }
 
   Future<void> _newTest(Celda celda) async {

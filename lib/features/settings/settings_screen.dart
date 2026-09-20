@@ -2,9 +2,16 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../core/app_info.dart';
 import '../../core/classification.dart';
+import '../../data/preferences_store.dart';
+import '../../services/backup_service.dart';
 import '../../services/csv_service.dart';
 import '../../state/celda_controller.dart';
 import '../widgets/verdict_chip.dart';
@@ -61,6 +68,18 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 22),
 
+        Text('Respaldo', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          'Todo vive en este teléfono. Un respaldo guarda la base de datos, '
+          'las fotos y los ajustes en un solo archivo: guárdalo fuera del '
+          'teléfono para no perder el historial del taller.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 10),
+        _BackupCard(),
+
+        const SizedBox(height: 22),
         Text('Datos', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Card(
@@ -342,6 +361,263 @@ class _ThresholdCardState extends State<_ThresholdCard> {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+}
+
+/// Sección de respaldo: crear, restaurar y recordar.
+class _BackupCard extends StatefulWidget {
+  const _BackupCard();
+
+  @override
+  State<_BackupCard> createState() => _BackupCardState();
+}
+
+class _BackupCardState extends State<_BackupCard> {
+  final _prefs = PreferencesStore();
+  final _service = BackupService();
+
+  DateTime? _ultimo;
+  String? _taller;
+  bool _cargando = true;
+  bool _ocupado = false;
+
+  /// Días tras los cuales se recuerda hacer otro respaldo.
+  static const _diasAviso = 7;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    final ultimo = await _prefs.loadLastBackup();
+    final taller = await _prefs.loadTaller();
+    if (!mounted) return;
+    setState(() {
+      _ultimo = ultimo;
+      _taller = taller;
+      _cargando = false;
+    });
+  }
+
+  int? get _diasDesde {
+    if (_ultimo == null) return null;
+    return DateTime.now().difference(_ultimo!).inDays;
+  }
+
+  bool get _tocaRespaldar {
+    final d = _diasDesde;
+    return d == null || d >= _diasAviso;
+  }
+
+  Future<void> _crear() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _ocupado = true);
+    try {
+      final bytes = await _service.crear(
+        versionApp: appVersionFull,
+        nombreTaller: _taller,
+      );
+      final dir = await getTemporaryDirectory();
+      final archivo = File(p.join(dir.path, BackupService.nombreArchivo()));
+      await archivo.writeAsBytes(bytes, flush: true);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(archivo.path, mimeType: 'application/zip')],
+          subject: 'Respaldo de CeldaPro',
+          text: 'Respaldo de CeldaPro del '
+              '${DateFormat('d MMM y, h:mm a', 'es').format(DateTime.now())}. '
+              'Guárdalo fuera del teléfono.',
+        ),
+      );
+
+      await _prefs.saveLastBackup(DateTime.now());
+      if (!mounted) return;
+      setState(() => _ultimo = DateTime.now());
+      messenger.showSnackBar(
+        SnackBar(content: Text('Respaldo creado (${_mb(bytes.length)})')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('No se pudo crear el respaldo: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
+  }
+
+  Future<void> _restaurar() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = context.read<CeldaController>();
+    try {
+      final files = await FilePicker.pickFiles(type: FileType.any);
+      if (files.isEmpty) return;
+      final ruta = files.first.path;
+      if (ruta == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('No se pudo leer el archivo.')),
+        );
+        return;
+      }
+      final bytes = await File(ruta).readAsBytes();
+
+      final BackupInfo info;
+      try {
+        info = _service.inspeccionar(bytes);
+      } on BackupInvalido catch (e) {
+        messenger.showSnackBar(SnackBar(content: Text(e.mensaje)));
+        return;
+      }
+
+      if (!mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('¿Restaurar este respaldo?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Del ${DateFormat('d MMM y, h:mm a', 'es').format(info.fecha)}'),
+              const SizedBox(height: 8),
+              Text(info.resumen),
+              const SizedBox(height: 8),
+              Text('Versión de la app: ${info.version}',
+                  style: Theme.of(ctx).textTheme.bodySmall),
+              const SizedBox(height: 12),
+              Text(
+                'Se reemplazarán los datos actuales. Antes de hacerlo se '
+                'guardará una copia del estado actual.',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Restaurar'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+
+      setState(() => _ocupado = true);
+      final resultado = await _service.restaurar(bytes);
+      await controller.init();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Restaurado: ${resultado.info.resumen}'),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('No se pudo restaurar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
+  }
+
+  Future<void> _editarTaller() async {
+    final ctrl = TextEditingController(text: _taller ?? '');
+    final nombre = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nombre del taller'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Aparecerá en las etiquetas y los informes',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (nombre == null) return;
+    await _prefs.saveTaller(nombre);
+    if (mounted) setState(() => _taller = nombre.isEmpty ? null : nombre);
+  }
+
+  String _mb(int bytes) => '${(bytes / 1048576).toStringAsFixed(1)} MB';
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dias = _diasDesde;
+
+    final estado = _ultimo == null
+        ? 'Todavía no has hecho ningún respaldo'
+        : dias == 0
+            ? 'Último respaldo: hoy'
+            : 'Último respaldo: hace $dias ${dias == 1 ? "día" : "días"}';
+
+    return Card(
+      color: _tocaRespaldar && !_cargando
+          ? scheme.errorContainer.withValues(alpha: 0.45)
+          : null,
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(
+              _tocaRespaldar ? Icons.warning_amber_rounded : Icons.shield_outlined,
+              color: _tocaRespaldar ? scheme.error : null,
+            ),
+            title: Text(estado),
+            subtitle: Text(
+              _tocaRespaldar
+                  ? 'Guarda una copia fuera del teléfono'
+                  : 'Vas al día',
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.save_alt),
+            title: const Text('Crear respaldo y compartir'),
+            subtitle: const Text('Base de datos + fotos + ajustes'),
+            enabled: !_ocupado,
+            onTap: _ocupado ? null : _crear,
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.settings_backup_restore),
+            title: const Text('Restaurar desde archivo'),
+            subtitle: const Text('Reemplaza los datos actuales'),
+            enabled: !_ocupado,
+            onTap: _ocupado ? null : _restaurar,
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.storefront_outlined),
+            title: const Text('Nombre del taller'),
+            subtitle: Text(_taller ?? 'Sin definir'),
+            onTap: _editarTaller,
+          ),
+          if (_ocupado)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: LinearProgressIndicator(),
+            ),
+        ],
+      ),
     );
   }
 }

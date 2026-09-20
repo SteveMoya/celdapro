@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <!-- Versión monocroma (una sola tinta, sin degradados ni transparencias):
+       para impresión en una tinta, grabados, sellos y marcas de agua.
+       El color lo hereda del contexto: blanco sobre verde, tinta sobre claro. -->
+  <g fill="#0F1F14">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none"
+          stroke="#0F1F14" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z"/>
+    <rect x="228" y="150" width="56" height="54" rx="14"/>
+    <rect x="196" y="192" width="120" height="184" rx="30"
+          fill="none" stroke="#0F1F14" stroke-width="16"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z"
+          fill="none" stroke="#0F1F14" stroke-width="14"/>
+  </g>
+</svg>

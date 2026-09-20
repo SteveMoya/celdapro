@@ -48,11 +48,27 @@ class CeldaController extends ChangeNotifier {
   double? avgSoh;
   int total = 0;
 
+  /// Fecha del último respaldo (null si nunca se ha hecho uno).
+  DateTime? ultimoRespaldo;
+
+  /// Días desde el último respaldo, o null si no hay ninguno.
+  int? get diasSinRespaldo =>
+      ultimoRespaldo == null ? null : DateTime.now().difference(ultimoRespaldo!).inDays;
+
+  /// Días tras los cuales conviene recordar el respaldo.
+  static const diasAvisoRespaldo = 7;
+
+  bool get tocaRespaldar {
+    final d = diasSinRespaldo;
+    return d == null || d >= diasAvisoRespaldo;
+  }
+
   // ---------- Carga ----------
 
   Future<void> init() async {
     thresholds = await _prefs.loadThresholds();
     rejectReasons = await _prefs.loadRejectReasons();
+    ultimoRespaldo = await _prefs.loadLastBackup();
     await refresh();
   }
 

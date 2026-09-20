@@ -42,6 +42,9 @@ class PhotoService {
     return dir;
   }
 
+  /// Carpeta donde viven las fotos de evidencia (para respaldos).
+  Future<Directory> directorio() => _photosDir();
+
   /// Borra la foto de una celda si existe (al eliminar o reemplazar).
   Future<void> delete(String? path) async {
     if (path == null || path.isEmpty) return;

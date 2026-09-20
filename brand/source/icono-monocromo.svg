@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <!-- Capa monocroma del icono adaptativo (Android 13+, temas Material You).
+       El sistema la tiñe con su paleta; aquí solo importa la forma. -->
+  <g transform="translate(256,256) scale(0.72) translate(-262,-256)">
+    <path d="M 330 92 L 168 288 L 244 288 L 200 420 L 356 226 L 280 226 Z"
+          fill="#FFFFFF"/>
+  </g>
+</svg>

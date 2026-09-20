@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <!-- Variante compacta (sin anillo) para tamaños menores de 32 px,
+       donde el anillo y el rayo se fundirían en una mancha.
+       La celda va en verde de marca para que el símbolo se lea sobre
+       fondos claros y oscuros. -->
+  <defs>
+    <linearGradient id="cpCellGreen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#43A047"/>
+      <stop offset="1" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="cpBolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="196" y="140" width="120" height="54" rx="14" fill="#2E7D32"/>
+  <rect x="196" y="186" width="120" height="196" rx="32" fill="url(#cpCellGreen)"/>
+  <path d="M 278 222 L 220 294 L 248 294 L 234 352 L 294 276 L 264 276 Z" fill="url(#cpBolt)"/>
+</svg>

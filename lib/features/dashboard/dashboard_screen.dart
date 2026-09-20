@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/classification.dart';
 import '../../data/models/celda.dart';
 import '../../state/celda_controller.dart';
+import '../home/home_shell.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -38,6 +39,11 @@ class DashboardScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
+          // Aviso de respaldo: los datos solo viven en este teléfono.
+          if (c.tocaRespaldar) ...[
+            _AvisoRespaldo(dias: c.diasSinRespaldo),
+            const SizedBox(height: 14),
+          ],
           // Métricas principales.
           GridView.count(
             crossAxisCount: 2,
@@ -166,6 +172,60 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Recordatorio de respaldo cuando el último es viejo (o no existe).
+class _AvisoRespaldo extends StatelessWidget {
+  const _AvisoRespaldo({required this.dias});
+
+  final int? dias;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final texto = dias == null
+        ? 'Todavía no has hecho ningún respaldo'
+        : 'Último respaldo: hace $dias ${dias == 1 ? "día" : "días"}';
+
+    return Card(
+      color: scheme.errorContainer.withValues(alpha: 0.45),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.shield_outlined, color: scheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    texto,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Todo el historial del taller vive en este teléfono. '
+                    'Guarda una copia fuera por si se pierde o se estropea.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Lleva a la pestaña de Ajustes, donde está el respaldo.
+                context.read<ValueNotifier<int>>().value =
+                    HomeShell.ajustesTab;
+              },
+              child: const Text('Respaldar'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -19,6 +19,38 @@ class DatabaseHelper {
 
   Future<Database> get database async => _db ??= await _open();
 
+  /// Ruta del archivo de base de datos en el dispositivo.
+  static Future<String> ruta() async =>
+      p.join(await getDatabasesPath(), _dbName);
+
+  /// Cierra la base de datos para poder copiar el archivo con seguridad.
+  ///
+  /// Se usa antes de un respaldo o una restauración: copiar un SQLite abierto
+  /// puede dar un archivo a medias.
+  Future<void> cerrar() async {
+    await _db?.close();
+    _db = null;
+  }
+
+  /// Reabre la base de datos tras un respaldo o una restauración.
+  Future<void> reabrir() async => database;
+
+  /// Cuenta las filas de las cuatro tablas principales.
+  Future<Map<String, int>> contar() async {
+    final base = await database;
+    Future<int> n(String tabla) async {
+      final r = await base.rawQuery('SELECT COUNT(*) AS n FROM $tabla');
+      return (r.first['n'] as int?) ?? 0;
+    }
+
+    return {
+      'celdas': await n(tableCeldas),
+      'lotes': await n(tableLotes),
+      'tests': await n(tableTests),
+      'eventos': await n(tableEventos),
+    };
+  }
+
   Future<Database> _open() async {
     final dir = await getDatabasesPath();
     final path = p.join(dir, _dbName);

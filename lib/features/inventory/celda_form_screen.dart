@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/cell_code.dart';
 import '../../core/classification.dart';
 import '../../core/theme.dart';
 import '../../data/cell_catalog.dart';
@@ -14,11 +15,21 @@ import '../widgets/verdict_chip.dart';
 /// Alta y edición de una celda. Opcionalmente registra la primera medición
 /// y muestra el veredicto calculado en vivo.
 class CeldaFormScreen extends StatefulWidget {
-  const CeldaFormScreen({super.key, this.celda, this.initialQr, this.initialLoteId});
+  const CeldaFormScreen({
+    super.key,
+    this.celda,
+    this.initialQr,
+    this.initialLoteId,
+    this.initialScan,
+  });
 
   final Celda? celda;
   final String? initialQr;
   final int? initialLoteId;
+
+  /// Datos leídos de una etiqueta de CeldaPro: se usan para rellenar el alta
+  /// sin volver a teclear la ficha técnica.
+  final CellPayload? initialScan;
 
   bool get isEdit => celda != null;
 
@@ -49,6 +60,9 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
   /// Ficha del catálogo elegida (battery-tool), si la hay.
   CellCatalogEntry? _catalogo;
 
+  /// Se llegó aquí escaneando una etiqueta de CeldaPro.
+  bool _etiquetaEscaneada = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,8 +81,26 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
     } else {
       _qrCtrl.text = widget.initialQr ?? '';
       _loteId = widget.initialLoteId;
+      _aplicarEtiqueta(widget.initialScan);
       WidgetsBinding.instance.addPostFrameCallback((_) => _sugerirCodigo());
     }
+  }
+
+  /// Rellena la ficha con lo que traía la etiqueta escaneada.
+  void _aplicarEtiqueta(CellPayload? p) {
+    if (p == null) return;
+    _codigoCtrl.text = p.codigo;
+    _marcaCtrl.text = p.marca ?? '';
+    _modeloCtrl.text = p.modelo ?? '';
+    if (p.capacidadMah != null) {
+      _nominalCtrl.text = p.capacidadMah == p.capacidadMah!.roundToDouble()
+          ? p.capacidadMah!.toStringAsFixed(0)
+          : '${p.capacidadMah}';
+    }
+    if (p.voltaje != null) _voltajeCtrl.text = '${p.voltaje}';
+    final quimica = Chemistry.values.where((c) => c.label == p.quimica);
+    if (quimica.isNotEmpty) _quimica = quimica.first;
+    _etiquetaEscaneada = true;
   }
 
   Future<void> _sugerirCodigo() async {
@@ -148,6 +180,28 @@ class _CeldaFormScreenState extends State<CeldaFormScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
+            if (_etiquetaEscaneada) ...[
+              Card(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.qr_code_2_outlined, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Datos leídos de la etiqueta. Revisa que coincidan '
+                          'antes de guardar.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             // Catálogo de celdas (base de battery-tool).
             _CatalogoPicker(
               seleccion: _catalogo,

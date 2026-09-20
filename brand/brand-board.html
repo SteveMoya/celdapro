@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>CeldaPro — Brand Board</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Inter, 'DejaVu Sans', sans-serif;
+    color: #0F1F14; background: #fff; -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .pagina {
+    width: 210mm; height: 296mm; padding: 14mm 15mm 10mm;
+    position: relative; page-break-after: always; overflow: hidden;
+    background: #fff;
+  }
+  .pagina:last-child { page-break-after: auto; }
+  .pnum {
+    position: absolute; bottom: 7mm; left: 15mm; right: 15mm;
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: #5F6B63; letter-spacing: .08em;
+    border-top: 1px solid #DCE3DD; padding-top: 3mm;
+  }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -.02em; }
+  h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .16em;
+    color: #2E7D32; margin: 0 0 12px; padding-bottom: 6px;
+    border-bottom: 2px solid #2E7D32;
+  }
+  h3 { font-size: 15px; margin: 22px 0 8px; }
+  p { margin: 0 0 8px; font-size: 12.5px; line-height: 1.55; }
+  .suave { color: #5F6B63; }
+  .cols { display: flex; gap: 14px; }
+  .cols > * { flex: 1; min-width: 0; }
+  .caja {
+    border: 1px solid #DCE3DD; border-radius: 12px; padding: 14px;
+    background: #fff;
+  }
+  .caja.fondo { background: #F6F8F6; }
+  .caja.verde { background: #2E7D32; border-color: #2E7D32; }
+  .caja.verde .rotulo { color: #fff; }
+  .caja.oscura { background: #1B5E20; border-color: #1B5E20; }
+  .rotulo {
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em;
+    color: #5F6B63; margin-bottom: 10px;
+  }
+  .marca-grande { display: block; width: 150px; margin: 0 auto; }
+  .portada { display: flex; flex-direction: column; justify-content: center;
+             align-items: center; text-align: center; min-height: 250mm; }
+  .portada .lock { width: 300px; }
+  .portada h1 { font-size: 40px; margin-top: 26px; }
+  .tagline { font-size: 13px; letter-spacing: .2em; color: #5F6B63;
+             text-transform: uppercase; margin-top: 6px; }
+  .sello {
+    margin-top: 30px; font-size: 11px; color: #5F6B63;
+    border: 1px solid #DCE3DD; border-radius: 999px; padding: 7px 16px;
+  }
+  .swatch { display: flex; gap: 12px; align-items: flex-start;
+            padding: 9px 0; border-bottom: 1px solid #DCE3DD; }
+  .swatch:last-child { border-bottom: none; }
+  .chip { width: 52px; height: 52px; border-radius: 10px; flex: none;
+          border: 1px solid rgba(0,0,0,.08); }
+  .swatch-info strong { font-size: 13px; display: block; }
+  .swatch-info code { font-size: 12px; color: #2E7D32;
+                      font-weight: 700; letter-spacing: .04em; }
+  .swatch-info .meta { font-size: 10px; color: #5F6B63; display: block;
+                       margin: 1px 0 3px; }
+  .swatch-info p { font-size: 11px; margin: 0; color: #5F6B63; }
+  .tipo { display: flex; gap: 14px; align-items: baseline;
+          padding: 10px 0; border-bottom: 1px solid #DCE3DD; }
+  .tipo:last-child { border-bottom: none; }
+  .tipo-meta { width: 150px; flex: none; font-size: 10px; color: #5F6B63;
+               line-height: 1.4; }
+  .tipo-meta strong { color: #0F1F14; font-size: 11.5px; }
+  .tipo-muestra { flex: 1; min-width: 0; }
+  .iconos { display: flex; gap: 18px; align-items: flex-end; flex-wrap: wrap; }
+  .icono-item { text-align: center; }
+  .icono-item img { display: block; border-radius: 22%; }
+  .icono-item span { font-size: 9px; color: #5F6B63; display: block;
+                     margin-top: 5px; }
+  .celda-marca { display: flex; align-items: center; gap: 10px;
+                 margin-bottom: 12px; }
+  .si-no { display: flex; gap: 14px; }
+  .si-no > div { flex: 1; }
+  .si-no ul { margin: 0; padding-left: 18px; font-size: 11.5px;
+              line-height: 1.7; }
+  .si { color: #2E7D32; }
+  .no { color: #C62828; }
+  .muestra-app {
+    border: 1px solid #DCE3DD; border-radius: 14px; overflow: hidden;
+    background: #F6F8F6;
+  }
+  .app-bar { background: #2E7D32; color: #fff; padding: 10px 14px;
+             font-weight: 700; font-size: 14px;
+             display: flex; align-items: center; gap: 8px; }
+  .app-bar img { width: 20px; }
+  .app-cuerpo { padding: 12px; }
+  .tarjeta { background: #fff; border: 1px solid #DCE3DD;
+             border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+  .fila { display: flex; justify-content: space-between; font-size: 11px; }
+  .pildora { font-size: 9px; font-weight: 700; color: #fff;
+             border-radius: 999px; padding: 2px 8px; }
+  .etiqueta-muestra {
+    border: 1.5px dashed #5F6B63; border-radius: 8px; padding: 10px;
+    display: flex; gap: 12px; align-items: center; background: #fff;
+  }
+  .barras { flex: none; }
+  .etiqueta-txt { font-size: 10px; line-height: 1.5; }
+  .etiqueta-txt strong { font-size: 12px; }
+  .aviso {
+    background: #FFF8E1; border-left: 3px solid #FFB300;
+    padding: 9px 12px; border-radius: 0 8px 8px 0; font-size: 11.5px;
+    margin-top: 10px;
+  }
+  .pie-marca { display: flex; justify-content: space-between;
+               align-items: center; margin-bottom: 18px; }
+  .pie-marca img { height: 26px; }
+  .pie-marca span { font-size: 9px; color: #5F6B63;
+                    letter-spacing: .1em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- 1. PORTADA -->
+<div class="pagina">
+  <div class="portada">
+    <svg class="lock" xmlns="http://www.w3.org/2000/svg" viewBox="45.5 119.5 808.5 470.5" width="808" height="470">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(320.0, 60) scale(0.5078125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="450.0" y="500" text-anchor="middle" font-family="Inter"
+        font-weight="700" font-size="150" letter-spacing="-4">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+  <text x="450.0" y="580" text-anchor="middle" font-family="Inter"
+        font-weight="500" font-size="44" letter-spacing="6" fill="#5F6B63">
+    GESTIÓN DE CELDAS DE LITIO
+  </text>
+</svg>
+    <h1>Manual de marca</h1>
+    <div class="tagline">Gestión de restauración de celdas de litio</div>
+    <div class="sello">Versión 1.0 · Septiembre 2026 · Uso interno y del taller</div>
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>01</span></div>
+</div>
+
+<!-- 2. EL SÍMBOLO -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>El símbolo</span>
+  </div>
+  <h2>El símbolo</h2>
+  <p>Una <strong>celda cilíndrica</strong> (18650) con un <strong>rayo ámbar</strong>
+  en su interior —la energía que se recupera— rodeada por un <strong>anillo verde
+  abierto</strong> con punta de flecha: el ciclo de restauración que avanza. El
+  verde es la marca y el trabajo; el ámbar, la energía recuperada.</p>
+
+  <div class="cols" style="margin-top:18px">
+    <div class="caja fondo" style="text-align:center">
+      <div class="rotulo">Completo · desde 48 px</div>
+      <svg class="marca-grande" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <defs>
+    <linearGradient id="cpRing" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="cpCell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="cpBolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Anillo abierto: el ciclo de restauración -->
+  <path d="M 331 156 A 150 150 0 1 1 181 156"
+        fill="none" stroke="url(#cpRing)" stroke-width="30" stroke-linecap="round"/>
+  <!-- Punta de flecha: el ciclo avanza -->
+  <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+
+  <!-- Terminal positivo -->
+  <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+  <!-- Cuerpo de la celda (18650) -->
+  <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#cpCell)"/>
+  <!-- Rayo: la energía recuperada -->
+  <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#cpBolt)"/>
+</svg>
+
+      <p class="suave" style="font-size:10.5px">Uso principal: app, web, documentos.</p>
+    </div>
+    <div class="caja fondo" style="text-align:center">
+      <div class="rotulo">Compacto · desde 24 px</div>
+      <svg class="marca-grande" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <!-- Variante compacta (sin anillo) para tamaños menores de 32 px,
+       donde el anillo y el rayo se fundirían en una mancha.
+       La celda va en verde de marca para que el símbolo se lea sobre
+       fondos claros y oscuros. -->
+  <defs>
+    <linearGradient id="cpCellGreen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#43A047"/>
+      <stop offset="1" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="cpBolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="196" y="140" width="120" height="54" rx="14" fill="#2E7D32"/>
+  <rect x="196" y="186" width="120" height="196" rx="32" fill="url(#cpCellGreen)"/>
+  <path d="M 278 222 L 220 294 L 248 294 L 234 352 L 294 276 L 264 276 Z" fill="url(#cpBolt)"/>
+</svg>
+
+      <p class="suave" style="font-size:10.5px">Sin anillo, para tamaños pequeños.</p>
+    </div>
+    <div class="caja fondo" style="text-align:center">
+      <div class="rotulo">Micro · 16 px</div>
+      <svg class="marca-grande" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <!-- Variante micro (16 px): a ese tamaño la celda y el anillo se funden en
+       una mancha, así que se usa solo el rayo, grande, sobre el verde de marca.
+       Es el icono de notificación y el favicon. -->
+  <defs>
+    <linearGradient id="cpBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#43A047"/>
+      <stop offset="1" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="cpBoltBig" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD54F"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#cpBg)"/>
+  <path d="M 330 92 L 168 288 L 244 288 L 200 420 L 356 226 L 280 226 Z"
+        fill="url(#cpBoltBig)"/>
+</svg>
+
+      <p class="suave" style="font-size:10.5px">Favicon y notificaciones.</p>
+    </div>
+  </div>
+
+  <h3>Tamaño mínimo y aire de respeto</h3>
+  <p>Nunca por debajo de los tamaños indicados. Alrededor del símbolo debe quedar
+  libre, como mínimo, el ancho del terminal de la celda (≈ 12 % del símbolo).</p>
+  <div class="cols">
+    <div class="caja">
+      <div class="rotulo">Aire mínimo</div>
+      <div style="display:flex;justify-content:center;padding:6px">
+        <div style="border:1px dashed #5F6B63;padding:14px;border-radius:8px">
+          <div style="border:1px dashed #43A047;padding:12px;border-radius:6px">
+            <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <defs>
+    <linearGradient id="cpRing" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="cpCell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="cpBolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Anillo abierto: el ciclo de restauración -->
+  <path d="M 331 156 A 150 150 0 1 1 181 156"
+        fill="none" stroke="url(#cpRing)" stroke-width="30" stroke-linecap="round"/>
+  <!-- Punta de flecha: el ciclo avanza -->
+  <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+
+  <!-- Terminal positivo -->
+  <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+  <!-- Cuerpo de la celda (18650) -->
+  <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#cpCell)"/>
+  <!-- Rayo: la energía recuperada -->
+  <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#cpBolt)"/>
+</svg>
+
+          </div>
+        </div>
+      </div>
+      <p class="suave" style="font-size:10.5px;margin-top:6px">
+      El recuadro verde marca la separación mínima respecto a otros elementos.</p>
+    </div>
+    <div class="caja">
+      <div class="rotulo">Tamaños de referencia</div>
+      <div class="iconos">
+        <div class="icono-item"><svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="CeldaPro">
+  <defs>
+    <linearGradient id="cpRing" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="cpCell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="cpBolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/>
+      <stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Anillo abierto: el ciclo de restauración -->
+  <path d="M 331 156 A 150 150 0 1 1 181 156"
+        fill="none" stroke="url(#cpRing)" stroke-width="30" stroke-linecap="round"/>
+  <!-- Punta de flecha: el ciclo avanza -->
+  <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+
+  <!-- Terminal positivo -->
+  <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+  <!-- Cuerpo de la celda (18650) -->
+  <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#cpCell)"/>
+  <!-- Rayo: la energía recuperada -->
+  <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#cpBolt)"/>
+</svg>
+
+          <span>48 px</span></div>
+      </div>
+      <p class="suave" style="font-size:10.5px">En la app: 48 px en listas y
+      cabeceras; 24 px en barras densas.</p>
+    </div>
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>02</span></div>
+</div>
+
+<!-- 3. LOCKUPS -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Composiciones</span>
+  </div>
+  <h2>Composiciones</h2>
+  <p>La forma principal es el <strong>lockup horizontal</strong>: símbolo a la
+  izquierda y nombre a la derecha. La palabra <em>Celda</em> va en tinta y
+  <em>Pro</em> en verde: siempre junto, nunca partido en dos líneas.</p>
+
+  <div class="caja fondo" style="margin-top:16px">
+    <div class="rotulo">Horizontal · uso principal</div>
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+  </div>
+
+  <div class="caja oscura" style="margin-top:12px">
+    <div class="rotulo" style="color:#A5D6A7">Horizontal · sobre fondo oscuro</div>
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#81C784"/>
+      <stop offset="1" stop-color="#A5D6A7"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#A5D6A7"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#FFFFFF">Celda</tspan><tspan fill="#66BB6A">Pro</tspan>
+  </text>
+</svg>
+  </div>
+
+  <div class="caja fondo" style="margin-top:12px;text-align:center">
+    <div class="rotulo">Vertical · sellos y portadas</div>
+    <div style="display:flex;justify-content:center">
+      <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="45.5 119.5 808.5 470.5" width="808" height="470">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(320.0, 60) scale(0.5078125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="450.0" y="500" text-anchor="middle" font-family="Inter"
+        font-weight="700" font-size="150" letter-spacing="-4">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+  <text x="450.0" y="580" text-anchor="middle" font-family="Inter"
+        font-weight="500" font-size="44" letter-spacing="6" fill="#5F6B63">
+    GESTIÓN DE CELDAS DE LITIO
+  </text>
+</svg>
+    </div>
+  </div>
+
+  <div class="aviso">
+    <strong>Sobre fondos oscuros</strong>, usa la versión clara: el verde profundo
+    se pierde sobre verde o negro. Nunca pongas la versión de fondo claro encima
+    de una fotografía sin una capa que garantice el contraste.
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>03</span></div>
+</div>
+
+<!-- 4. ICONO DE APP -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Icono de app</span>
+  </div>
+  <h2>Icono de app</h2>
+  <p>El icono aplica el símbolo sobre el verde de marca. En Android se usan las
+  capas <strong>adaptativas</strong>: el sistema recorta la forma (círculo,
+  cuadrado redondeado, gota…) y la marca vive dentro de la zona segura central,
+  por lo que nunca queda cortada.</p>
+
+  <div class="caja fondo" style="margin-top:14px">
+    <div class="rotulo">Tamaños reales de lanzador</div>
+    <div class="iconos">
+      <div class="icono-item">
+        <img src="icono-app.png" width="144" height="144">
+        <span>144 px</span></div>
+      <div class="icono-item">
+        <img src="icono-app.png" width="96" height="96">
+        <span>96 px</span></div>
+      <div class="icono-item">
+        <img src="icono-app.png" width="72" height="72">
+        <span>72 px</span></div>
+      <div class="icono-item">
+        <img src="icono-app.png" width="48" height="48">
+        <span>48 px</span></div>
+      <div class="icono-item">
+        <img src="icono-app-redondo.png" width="96" height="96">
+        <span>redondo</span></div>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:12px">
+    <div class="caja">
+      <div class="rotulo">Capa de fondo</div>
+      <img src="icono-adaptativo-fondo.png" width="120" height="120"
+           style="border-radius:10px">
+      <p class="suave" style="font-size:10.5px">Verde de marca sólido (#2E7D32).</p>
+    </div>
+    <div class="caja">
+      <div class="rotulo">Capa de frente y zona segura</div>
+      <div style="position:relative;width:120px;height:120px">
+        <img src="icono-adaptativo-frente.png" width="120" height="120">
+        <div style="position:absolute;inset:0;border:1px dashed #2E7D32;
+             border-radius:50%"></div>
+      </div>
+      <p class="suave" style="font-size:10.5px">La marca cabe en el círculo
+      seguro del 66 %.</p>
+    </div>
+    <div class="caja">
+      <div class="rotulo">Monocromo (Material You)</div>
+      <img src="../brand/out/../out/icono-notificacion.png" width="64" height="64"
+           style="background:#eee;border-radius:8px;padding:6px">
+      <p class="suave" style="font-size:10.5px">Android 13+ lo tiñe con la
+      paleta del usuario.</p>
+    </div>
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>04</span></div>
+</div>
+
+<!-- 5. COLOR -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Color</span>
+  </div>
+  <h2>Paleta</h2>
+  <p>El verde de marca manda: cualquier pantalla debe leerse verde antes que
+  ámbar. El ámbar es acento y aviso, nunca color de fondo grande.</p>
+  <div style="margin-top:12px">
+    <div class="swatch">
+      <div class="chip" style="background:#2E7D32"></div>
+      <div class="swatch-info">
+        <strong>Verde litio</strong>
+        <code>#2E7D32</code>
+        <span class="meta">RGB 46 · 125 · 50 · Energía recuperada</span>
+        <p>Primario. Marca, acciones principales, veredicto A.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#1B5E20"></div>
+      <div class="swatch-info">
+        <strong>Verde profundo</strong>
+        <code>#1B5E20</code>
+        <span class="meta">RGB 27 · 94 · 32 · Profundidad</span>
+        <p>Fondos oscuros, icono adaptativo, titulares.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#43A047"></div>
+      <div class="swatch-info">
+        <strong>Verde claro</strong>
+        <code>#43A047</code>
+        <span class="meta">RGB 67 · 160 · 71 · Apoyo del primario</span>
+        <p>Degradados y estados hover.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#FFB300"></div>
+      <div class="swatch-info">
+        <strong>Ámbar energía</strong>
+        <code>#FFB300</code>
+        <span class="meta">RGB 255 · 179 · 0 · Atención</span>
+        <p>Acento. Rayo del símbolo, avisos, veredicto C.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#1565C0"></div>
+      <div class="swatch-info">
+        <strong>Azul veredicto B</strong>
+        <code>#1565C0</code>
+        <span class="meta">RGB 21 · 101 · 192 · Dato</span>
+        <p>Clasificación B (celda aprovechable).</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#C62828"></div>
+      <div class="swatch-info">
+        <strong>Rojo rechazo</strong>
+        <code>#C62828</code>
+        <span class="meta">RGB 198 · 40 · 40 · Peligro</span>
+        <p>Rechazo, errores, celdas agotadas.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#0F1F14"></div>
+      <div class="swatch-info">
+        <strong>Tinta</strong>
+        <code>#0F1F14</code>
+        <span class="meta">RGB 15 · 31 · 20 · Lectura</span>
+        <p>Texto principal sobre fondo claro.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#5F6B63"></div>
+      <div class="swatch-info">
+        <strong>Gris texto</strong>
+        <code>#5F6B63</code>
+        <span class="meta">RGB 95 · 107 · 99 · Lectura</span>
+        <p>Texto secundario, descripciones, pie de foto.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#F6F8F6"></div>
+      <div class="swatch-info">
+        <strong>Fondo</strong>
+        <code>#F6F8F6</code>
+        <span class="meta">RGB 246 · 248 · 246 · Superficie</span>
+        <p>Fondo de la app en tema claro.</p>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#DCE3DD"></div>
+      <div class="swatch-info">
+        <strong>Borde</strong>
+        <code>#DCE3DD</code>
+        <span class="meta">RGB 220 · 227 · 221 · Estructura</span>
+        <p>Bordes de tarjetas y campos.</p>
+      </div>
+    </div></div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>05</span></div>
+</div>
+
+<!-- 6. TIPOGRAFÍA -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Tipografía</span>
+  </div>
+  <h2>Tipografía</h2>
+  <p><strong>Inter</strong> en toda la app: excelente en pantalla, cifras claras
+  (importante para mAh, voltios y ohmios) y licencia libre. Pesos: 400, 500, 600
+  y 700. Nunca en cursiva para datos técnicos.</p>
+  <div style="margin-top:12px">
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Display</strong><br>72 / 76 · peso 700</div>
+      <div class="tipo-muestra" style="font-size:72px;
+           font-weight:700; line-height:1.1">CeldaPro</div>
+    </div>
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Título 1</strong><br>34 / 40 · peso 700</div>
+      <div class="tipo-muestra" style="font-size:34px;
+           font-weight:700; line-height:1.1">Inventario de celdas</div>
+    </div>
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Título 2</strong><br>24 / 30 · peso 600</div>
+      <div class="tipo-muestra" style="font-size:24px;
+           font-weight:600; line-height:1.1">Samsung 25R (18650)</div>
+    </div>
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Cuerpo</strong><br>16 / 24 · peso 400</div>
+      <div class="tipo-muestra" style="font-size:16px;
+           font-weight:400; line-height:1.1">Capacidad medida 2 380 mAh · SoH 95 %</div>
+    </div>
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Cuerpo pequeño</strong><br>14 / 20 · peso 400</div>
+      <div class="tipo-muestra" style="font-size:14px;
+           font-weight:400; line-height:1.1">Test del 18 de septiembre</div>
+    </div>
+    <div class="tipo">
+      <div class="tipo-meta"><strong>Etiqueta</strong><br>12 / 16 · peso 600</div>
+      <div class="tipo-muestra" style="font-size:12px;
+           font-weight:600; line-height:1.1">CLASIFICADA · LOTE L-2026-09-A</div>
+    </div></div>
+
+  <h3>Cifras y unidades</h3>
+  <div class="caja fondo">
+    <p style="font-size:13px;margin:0">
+      Separador de miles con espacio fino: <strong>2 380 mAh</strong><br>
+      Unidad separada por espacio: <strong>3.6 V · 13 mΩ · 25 A</strong><br>
+      Porcentaje pegado a la cifra: <strong>95 %</strong> (con espacio fino, para
+      que la cifra respire)<br>
+      Decimales con punto, no con coma: <strong>3.6 V</strong>
+    </p>
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>06</span></div>
+</div>
+
+<!-- 7. USO CORRECTO -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Uso de la marca</span>
+  </div>
+  <h2>Uso de la marca</h2>
+  <div class="si-no">
+    <div class="caja">
+      <div class="rotulo si">Correcto</div>
+      <ul>
+        <li>Usar los archivos originales (SVG o PNG).</li>
+        <li>Mantener la proporción al escalar.</li>
+        <li>Verde de marca sobre blanco o gris claro.</li>
+        <li>Versión clara sobre fondos oscuros.</li>
+        <li>Respetar el aire mínimo alrededor.</li>
+        <li>Usar el símbolo compacto en tamaños pequeños.</li>
+      </ul>
+    </div>
+    <div class="caja">
+      <div class="rotulo no">Incorrecto</div>
+      <ul>
+        <li>Deformar, estirar o inclinar el símbolo.</li>
+        <li>Cambiar los colores de marca.</li>
+        <li>Separar <em>Celda</em> y <em>Pro</em> o cambiar la tipografía.</li>
+        <li>Poner sombras, contornos o degradados añadidos.</li>
+        <li>Usar el símbolo completo por debajo de 48 px.</li>
+        <li>Colocarlo sobre una foto sin garantizar contraste.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Cómo se ve en la aplicación</h3>
+  <div class="cols">
+    <div class="muestra-app">
+      <div class="app-bar">
+        <img src="logo-mark-compact.png" alt=""> CeldaPro
+      </div>
+      <div class="app-cuerpo">
+        <div class="tarjeta">
+          <div class="fila">
+            <strong>C-0001 · Samsung 25R</strong>
+            <span class="pildora" style="background:#2E7D32">A</span>
+          </div>
+          <div class="fila suave" style="margin-top:4px">
+            <span>2 380 mAh · 3.6 V</span><span>SoH 95.2 %</span>
+          </div>
+        </div>
+        <div class="tarjeta">
+          <div class="fila">
+            <strong>C-0002 · LG HG2</strong>
+            <span class="pildora" style="background:#1565C0">B</span>
+          </div>
+          <div class="fila suave" style="margin-top:4px">
+            <span>2 100 mAh · 3.6 V</span><span>SoH 84.0 %</span>
+          </div>
+        </div>
+        <div class="tarjeta">
+          <div class="fila">
+            <strong>C-0003 · Molicel P26A</strong>
+            <span class="pildora" style="background:#C62828">Rechazo</span>
+          </div>
+          <div class="fila suave" style="margin-top:4px">
+            <span>1 050 mAh · 3.6 V</span><span>SoH 42.0 %</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="caja fondo">
+        <div class="rotulo">Etiqueta de celda (impresa)</div>
+        <div class="etiqueta-muestra">
+          <img src="logo-mark-compact.png" width="34" height="34">
+          <div class="etiqueta-txt">
+            <strong>C-0001</strong><br>
+            Samsung 25R · 18650<br>
+            2 500 mAh · 3.6 V<br>
+            Lote L-2026-09-A
+          </div>
+        </div>
+        <p class="suave" style="font-size:10px;margin-top:8px">
+        La etiqueta lleva el código en texto (para leerlo a mano) y el código de
+        barras / QR (para escanearlo con la app).</p>
+      </div>
+      <div class="aviso">
+        <strong>Nunca</strong> imprimas la etiqueta sin el código en texto: si el
+        código de barras se moja, se raya o se despega, la celda debe seguir siendo
+        identificable a ojo.
+      </div>
+    </div>
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>07</span></div>
+</div>
+
+<!-- 8. ARCHIVOS -->
+<div class="pagina">
+  <div class="pie-marca">
+    <svg class="" xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>
+    <span>Archivos</span>
+  </div>
+  <h2>Archivos entregados</h2>
+  <p>Todo está en <code>brand/</code> dentro del repositorio. Los SVG son la
+  fuente de verdad (escalan sin perder calidad); los PNG son copias listas para
+  usar.</p>
+  <div class="caja fondo" style="margin-top:12px">
+    <p style="font-size:11.5px;line-height:2;margin:0">
+      <code>brand/source/logo-mark.svg</code> — símbolo principal<br>
+      <code>brand/source/logo-mark-compact.svg</code> — símbolo compacto<br>
+      <code>brand/source/logo-mark-micro.svg</code> — símbolo micro<br>
+      <code>brand/source/logo-mark-mono.svg</code> — una sola tinta<br>
+      <code>brand/source/logo-horizontal.svg</code> — lockup horizontal<br>
+      <code>brand/source/logo-horizontal-oscuro.svg</code> — lockup oscuro<br>
+      <code>brand/source/logo-vertical.svg</code> — lockup vertical<br>
+      <code>brand/source/icono-app.svg</code> — icono cuadrado<br>
+      <code>brand/source/icono-app-redondo.svg</code> — icono redondo<br>
+      <code>brand/source/icono-adaptativo-*.svg</code> — capas Android<br>
+      <code>brand/build_brand.py</code> — regenera todo<br>
+      <code>brand/verificar_logo.py</code> — comprueba la geometría
+    </p>
+  </div>
+  <div class="aviso">
+    <strong>Para regenerar todo</strong> tras cambiar un SVG fuente:
+    <code>python3 brand/build_brand.py</code>. El script ajusta los lockups,
+    exporta los PNG y actualiza los iconos de Android en un paso.
+  </div>
+  <div class="pnum"><span>CeldaPro — Manual de marca</span><span>08</span></div>
+</div>
+
+</body>
+</html>

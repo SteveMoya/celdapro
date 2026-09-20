@@ -33,6 +33,14 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Firma de la app: NUNCA al repositorio.
+android/key.properties
+*.jks
+*.keystore
+
+# Respaldos de la app
+*.celdapro
+
 # Symbolication related
 app.*.symbols
 
@@ -46,3 +54,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Artefactos del compilador de Kotlin
+android/.kotlin/

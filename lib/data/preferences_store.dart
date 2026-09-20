@@ -14,6 +14,8 @@ class PreferencesStore {
 
   static const _thresholdsKey = 'thresholds';
   static const _rejectReasonsKey = 'reject_reasons';
+  static const _lastBackupKey = 'ultimo_respaldo';
+  static const _tallerKey = 'nombre_taller';
 
   static const defaultRejectReasons = <String>[
     'Capacidad baja',
@@ -72,4 +74,24 @@ class PreferencesStore {
 
   Future<void> saveRejectReasons(List<String> reasons) =>
       _set(_rejectReasonsKey, jsonEncode(reasons));
+
+  /// Fecha del último respaldo guardado (null si nunca se ha hecho uno).
+  Future<DateTime?> loadLastBackup() async {
+    final raw = await _get(_lastBackupKey);
+    if (raw == null || raw.isEmpty) return null;
+    final ms = int.tryParse(raw);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> saveLastBackup(DateTime fecha) =>
+      _set(_lastBackupKey, '${fecha.millisecondsSinceEpoch}');
+
+  /// Nombre del taller, para las etiquetas y los informes.
+  Future<String?> loadTaller() async {
+    final v = await _get(_tallerKey);
+    return (v == null || v.trim().isEmpty) ? null : v.trim();
+  }
+
+  Future<void> saveTaller(String? nombre) =>
+      _set(_tallerKey, (nombre ?? '').trim());
 }

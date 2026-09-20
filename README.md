@@ -4,7 +4,8 @@ App Android para **gestionar y organizar la restauración de celdas de litio** e
 registro por celda, test de capacidad, clasificación automática (A/B/C/Rechazo), trazabilidad
 completa y métricas del proceso. **100% local** — sin backend, sin cuentas, sin costos.
 
-Flutter 3.47 + Material 3 · SQLite (sqflite) · escaneo QR/código de barras · exportar/importar CSV.
+Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras y QR · respaldo
+completo · exportar/importar CSV.
 
 ## ✨ Funcionalidades
 
@@ -22,13 +23,20 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · escaneo QR/código de barras ·
   (o `Rechazada` con motivo).
 - 📜 **Trazabilidad**: cada cambio de estado y cada test queda registrado con fecha.
 - 📸 **Evidencia fotográfica** por celda.
+- 🖨️ **Etiquetas imprimibles**: cada celda se etiqueta con **código de barras** (identificador),
+  **QR** (ficha completa) y los datos en texto. Tres tamaños, en PDF listo para imprimir o compartir.
+- 📷 **Escaneo**: al leer una etiqueta abre la celda; si no existe en el teléfono, da de alta una
+  nueva con los datos que traía la etiqueta.
+- 🛡️ **Respaldo y restauración**: base de datos, fotos y ajustes en un solo archivo `.celdapro`,
+  con vista previa antes de restaurar y copia de seguridad previa automática.
 - 📊 **Dashboard** con celdas procesadas, % rechazo, SoH promedio y actividad reciente.
 - 📤 **Exportar CSV** e **importar inventario** existente.
+- 🎨 **Marca propia**: logo, icono y guía de marca en `brand/` (ver [BRAND.md](brand/BRAND.md)).
 
 ## 🔒 Privacidad
 
 Toda la información (celdas, tests, fotos) se guarda **solo en el teléfono**. La app no envía
-datos a ningún servidor y no requiere cuenta.
+datos a ningún servidor y no requiere cuenta. No pide permiso de internet para funcionar.
 
 ## 📱 Requisitos
 
@@ -43,6 +51,32 @@ flutter test        # suite verde
 flutter build apk --release --split-per-abi
 ```
 
+### Firma de la release
+
+El APK de release se firma con tu keystore propio. Sin él, Gradle cae a la clave de depuración
+(sirve para probar, **no** para publicar).
+
+```sh
+./tools/generar_keystore.sh          # crea el keystore y te dice qué apuntar
+cp android/key.properties.example android/key.properties   # y rellénalo
+```
+
+`android/key.properties` y los `.jks` **nunca** se suben al repositorio (están en `.gitignore`).
+
+### Publicar una versión
+
+Sube la versión en `pubspec.yaml` y en `lib/core/app_info.dart` (un test comprueba que coincidan),
+crea el tag y el CI compila y publica el APK firmado solo:
+
+```sh
+git tag -a v0.3.0 -m "CeldaPro v0.3.0" "$(git rev-parse HEAD)"
+git push origin v0.3.0
+```
+
+Secretos que necesita el workflow de release (Settings → Secrets → Actions):
+`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+Si faltan, el workflow **falla a propósito** en vez de publicar un APK mal firmado.
+
 ## 📂 Estructura
 
 ```text
@@ -50,23 +84,33 @@ lib/
 ├── core/
 │   ├── theme.dart            # Material 3 (verde litio #2E7D32)
 │   ├── classification.dart   # SoH + veredicto (lógica pura, testeada)
-│   └── diagnostics.dart      # Diagnóstico de resistencia interna
+│   ├── diagnostics.dart      # Diagnóstico de resistencia interna
+│   ├── cell_code.dart        # Contenido de la etiqueta (barras + QR)
+│   └── app_info.dart         # Nombre y versión (una sola fuente)
 ├── data/
 │   ├── cell_catalog.dart     # 102 celdas comerciales (de battery-tool)
 │   ├── models/               # lote, celda, cell_test, cell_event
 │   ├── repositories/         # CRUD sobre SQLite
 │   ├── database_helper.dart  # esquema + migraciones
-│   └── preferences_store.dart# umbrales y motivos de rechazo
-├── services/                 # fotos, QR, CSV
+│   └── preferences_store.dart# umbrales, motivos de rechazo, taller, respaldo
+├── services/
+│   ├── code_service.dart     # generación de códigos de barras y QR
+│   ├── label_service.dart    # hojas de etiquetas en PDF
+│   ├── backup_service.dart   # respaldo y restauración (.celdapro)
+│   ├── photo_service.dart    # fotos de evidencia
+│   └── csv_service.dart      # exportar/importar inventario
 ├── state/                    # controladores (provider)
 └── features/                 # pantallas Material 3
     ├── catalog/              # catálogo de celdas comerciales
     ├── dashboard/            # métricas
     ├── inventory/            # lista, detalle, formularios, escáner
+    ├── labels/               # vista previa e impresión de etiquetas
     ├── lotes/                # lotes
-    └── settings/             # umbrales, CSV, privacidad
+    └── settings/             # umbrales, respaldo, CSV, privacidad
 
+brand/                        # marca: logo, icono, brand board y guía
 tools/generar_catalogo.py     # regenera cell_catalog.dart desde battery-tool
+tools/generar_keystore.sh     # crea el keystore de firma
 ```
 
 ## ⚠️ Aviso de seguridad
@@ -76,4 +120,8 @@ hinchadas, dañadas o sin tensión deben ir a **rechazo/aislamiento**, nunca a r
 
 ## 📋 Estado
 
-MVP en desarrollo (TODO 18). Fase 0 (arranque) y A (datos) completadas.
+MVP completo + marca y respaldo (TODO 18). Ver el plan de mejoras en
+`.hermes/plans/2026-09-18-celdapro-mejoras.md`.
+
+Pendiente: informes PDF por celda/lote, entrada masiva de tests, varias fotos por celda,
+tests de la capa de datos, captura de BMS por Bluetooth y armado de packs.

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="101.0 149.5 1209.0 272.5" width="1209" height="272">
+  <defs>
+    <linearGradient id="r" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1B5E20"/>
+      <stop offset="1" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E9DC"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC53D"/><stop offset="1" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40, 60) scale(0.78125)">
+    <path d="M 331 156 A 150 150 0 1 1 181 156" fill="none" stroke="url(#r)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M 209 137 L 163 143 L 186 181 Z" fill="#2E7D32"/>
+    <rect x="228" y="150" width="56" height="54" rx="14" fill="#FFFFFF"/>
+    <rect x="196" y="192" width="120" height="184" rx="30" fill="url(#c)"/>
+    <path d="M 278 226 L 220 298 L 248 298 L 234 356 L 294 280 L 264 280 Z" fill="url(#b)"/>
+  </g>
+  <text x="490" y="300" font-family="Inter" font-weight="700"
+        font-size="190" letter-spacing="-5">
+    <tspan fill="#0F1F14">Celda</tspan><tspan fill="#2E7D32">Pro</tspan>
+  </text>
+</svg>

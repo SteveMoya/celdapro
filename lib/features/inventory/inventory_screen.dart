@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/cell_code.dart';
 import '../../core/classification.dart';
 import '../../data/models/celda.dart';
 import '../../data/repositories/celda_repository.dart';
 import '../../state/celda_controller.dart';
+import '../labels/label_screen.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -159,6 +161,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
             onPressed: () => _scan(context),
             child: const Icon(Icons.qr_code_scanner),
           ),
+          if (c.celdas.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            FloatingActionButton.small(
+              heroTag: 'labels',
+              tooltip: 'Etiquetas del listado',
+              onPressed: () => _etiquetas(context, c.celdas),
+              child: const Icon(Icons.qr_code_2_outlined),
+            ),
+          ],
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             heroTag: 'new',
@@ -167,6 +178,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
             label: const Text('Celda'),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _etiquetas(BuildContext context, List<Celda> celdas) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => LabelScreen(
+          celdas: celdas,
+          titulo: 'Etiquetas (${celdas.length})',
+        ),
       ),
     );
   }
@@ -180,20 +202,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  /// Escanea una etiqueta: si la celda ya existe, abre su ficha; si no, abre el
+  /// alta con los datos de la etiqueta ya rellenados.
   Future<void> _scan(BuildContext context) async {
-    final code = await Navigator.of(context).push<String>(
+    final scan = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const ScannerScreen()),
     );
-    if (code == null || !context.mounted) return;
+    if (scan == null || !context.mounted) return;
 
+    final payload = CellPayload.decode(scan);
+    final codigo = (payload?.codigo.isNotEmpty ?? false)
+        ? payload!.codigo
+        : scan.trim();
+
+    final controller = context.read<CeldaController>();
+    Celda? existente;
+    for (final c in controller.celdas) {
+      if (c.codigoInterno.toLowerCase() == codigo.toLowerCase()) {
+        existente = c;
+        break;
+      }
+    }
+
+    if (existente != null && existente.id != null) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => CeldaDetailScreen(celdaId: existente!.id!),
+        ),
+      );
+      if (context.mounted) await controller.refresh();
+      return;
+    }
+
+    // Etiqueta de una celda que aún no está en este dispositivo: se da de alta
+    // con lo que traía la etiqueta, sin volver a escribir los datos.
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => CeldaFormScreen(initialQr: code),
+        builder: (_) => CeldaFormScreen(initialQr: codigo, initialScan: payload),
       ),
     );
-    if (saved == true && context.mounted) {
-      context.read<CeldaController>().refresh();
-    }
+    if (saved == true && context.mounted) await controller.refresh();
   }
 }
 

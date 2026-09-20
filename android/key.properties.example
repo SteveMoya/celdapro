@@ -1,0 +1,13 @@
+# Plantilla de credenciales de firma de CeldaPro.
+#
+# 1. Copia este archivo como android/key.properties
+# 2. Rellena los valores con los de tu keystore
+#
+# android/key.properties NO se sube al repositorio (está en .gitignore).
+# El keystore (.jks) tampoco. Si pierdes el keystore no podrás actualizar la
+# app en Google Play: guárdalo con copia de seguridad fuera del proyecto.
+
+storePassword=CAMBIA_ESTO
+keyPassword=CAMBIA_ESTO
+keyAlias=celdapro
+storeFile=/ruta/a/tu/celdapro-upload.jks
