@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/batch_session.dart';
 import '../../core/classification.dart';
+import '../../data/models/celda.dart';
 import '../../data/models/lote.dart';
 import '../../state/celda_controller.dart';
 import '../reports/report_screen.dart';
+import '../tests/batch_test_screen.dart';
 import '../widgets/metric_card.dart';
 import 'lote_form_screen.dart';
 
@@ -69,6 +72,7 @@ class _LoteCard extends StatelessWidget {
         ? null
         : clasificadas.map((x) => x.sohPct!).reduce((a, b) => a + b) /
             clasificadas.length;
+    final pendientes = BatchSession.pendientesDe(celdas);
 
     return Card(
       child: InkWell(
@@ -158,8 +162,36 @@ class _LoteCard extends StatelessWidget {
                   ),
                 ),
               ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: pendientes.isEmpty
+                      ? null
+                      : () => _testMasivo(context, pendientes),
+                  icon: const Icon(Icons.playlist_add_check, size: 18),
+                  label: Text(
+                    pendientes.isEmpty
+                        ? 'Todo medido'
+                        : 'Medir ${pendientes.length} pendientes',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Registra en serie las mediciones de las celdas pendientes del lote.
+  Future<void> _testMasivo(BuildContext context, List<Celda> pendientes) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => BatchTestScreen(
+          celdas: pendientes,
+          titulo: 'Test masivo · ${lote.codigo}',
         ),
       ),
     );

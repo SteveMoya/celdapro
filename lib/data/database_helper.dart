@@ -7,12 +7,13 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static const _dbName = 'celdapro.db';
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
 
   static const tableLotes = 'lotes';
   static const tableCeldas = 'celdas';
   static const tableTests = 'tests';
   static const tableEventos = 'eventos';
+  static const tableFotos = 'celda_fotos';
   static const tablePrefs = 'prefs';
 
   Database? _db;
@@ -71,6 +72,18 @@ class DatabaseHelper {
           await db.execute(
             'ALTER TABLE $tableCeldas ADD COLUMN ir_nominal_mohm REAL',
           );
+        }
+        // v3: varias fotos por celda, con etiqueta.
+        if (oldVersion < 3) {
+          await _crearTablaFotos(db);
+          // La foto que ya existía pasa a ser la primera de la galería, para
+          // que nadie pierda la evidencia que ya tenía registrada.
+          await db.execute('''
+            INSERT INTO $tableFotos (celda_id, path, etiqueta, fecha)
+            SELECT id, foto_path, 'evidence', created_at
+            FROM $tableCeldas
+            WHERE foto_path IS NOT NULL AND foto_path != ''
+          ''');
         }
       },
     );
@@ -149,12 +162,31 @@ class DatabaseHelper {
     ''');
     await db.execute('CREATE INDEX idx_eventos_celda ON $tableEventos(celda_id)');
 
+    await _crearTablaFotos(db);
+
     await db.execute('''
       CREATE TABLE $tablePrefs (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       )
     ''');
+  }
+
+  /// Galería de fotos de evidencia de cada celda.
+  Future<void> _crearTablaFotos(Database db) async {
+    await db.execute('''
+      CREATE TABLE $tableFotos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        celda_id INTEGER NOT NULL REFERENCES $tableCeldas(id) ON DELETE CASCADE,
+        path TEXT NOT NULL,
+        etiqueta TEXT NOT NULL,
+        fecha INTEGER NOT NULL,
+        nota TEXT
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_fotos_celda ON $tableFotos(celda_id)',
+    );
   }
 
   Future<void> close() async {

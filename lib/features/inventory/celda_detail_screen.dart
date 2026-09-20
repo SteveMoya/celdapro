@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,10 +7,10 @@ import '../../core/theme.dart';
 import '../../data/models/celda.dart';
 import '../../data/models/cell_event.dart';
 import '../../data/models/cell_test.dart';
-import '../../services/photo_service.dart';
 import '../../state/celda_controller.dart';
 import '../labels/label_screen.dart';
 import '../reports/report_screen.dart';
+import 'photo_gallery.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -91,6 +89,7 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
               if (v == 'delete') _confirmDelete(celda);
               if (v == 'label') _etiqueta(celda);
               if (v == 'report') _informe(celda);
+              if (v == 'duplicate') _duplicar(celda);
             },
             itemBuilder: (_) => const [
               PopupMenuItem(
@@ -99,6 +98,14 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
                   dense: true,
                   leading: Icon(Icons.picture_as_pdf_outlined),
                   title: Text('Ficha en PDF'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'duplicate',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.copy_all_outlined),
+                  title: Text('Duplicar celda'),
                 ),
               ),
               PopupMenuItem(
@@ -160,54 +167,8 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Foto de evidencia.
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                if (celda.fotoPath != null && File(celda.fotoPath!).existsSync())
-                  InkWell(
-                    onTap: () => _viewPhoto(celda.fotoPath!),
-                    child: Image.file(
-                      File(celda.fotoPath!),
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        Icon(Icons.add_a_photo_outlined,
-                            color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(width: 10),
-                        const Expanded(child: Text('Sin foto de evidencia')),
-                      ],
-                    ),
-                  ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () => _addPhoto(celda, fromCamera: true),
-                        icon: const Icon(Icons.photo_camera_outlined, size: 18),
-                        label: const Text('Cámara'),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () => _addPhoto(celda, fromCamera: false),
-                        icon: const Icon(Icons.photo_library_outlined, size: 18),
-                        label: const Text('Galería'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          // Fotos de evidencia (galería con etiquetas).
+          PhotoGallery(celda: celda),
           const SizedBox(height: 14),
 
           // Datos.
@@ -415,23 +376,6 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
 
   // ---------- Acciones ----------
 
-  Future<void> _addPhoto(Celda celda, {required bool fromCamera}) async {
-    try {
-      final path = await const PhotoService().pickAndSave(
-        celdaId: celda.id!,
-        fromCamera: fromCamera,
-      );
-      if (path == null || !mounted) return;
-      await context.read<CeldaController>().setFoto(celda, path);
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo guardar la foto: $e')),
-      );
-    }
-  }
-
   Future<void> _etiqueta(Celda celda) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -452,6 +396,34 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
           celda: celda,
         ),
       ),
+    );
+  }
+
+  /// Copia la celda con un código nuevo, para casos repetidos.
+  ///
+  /// La copia nace recepcionada y sin historial: los datos técnicos se copian,
+  /// las mediciones y las fotos no (serían de la celda original).
+  Future<void> _duplicar(Celda celda) async {
+    final controller = context.read<CeldaController>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final int nuevoId;
+    try {
+      nuevoId = await controller.duplicarCelda(celda);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('No se pudo duplicar: $e')),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Celda duplicada con un código nuevo')),
+    );
+    await navigator.push<void>(
+      MaterialPageRoute(builder: (_) => CeldaDetailScreen(celdaId: nuevoId)),
     );
   }
 
@@ -523,17 +495,6 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
 
     await context.read<CeldaController>().deleteCelda(celda);
     if (mounted) Navigator.of(context).pop();
-  }
-
-  void _viewPhoto(String path) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => Dialog(
-        child: InteractiveViewer(
-          child: Image.file(File(path)),
-        ),
-      ),
-    );
   }
 
   /// Evolución simple del SoH a lo largo de los tests.

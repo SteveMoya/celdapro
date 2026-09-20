@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 
 import '../core/classification.dart';
 import '../data/models/celda.dart';
+import '../data/models/celda_foto.dart';
 import '../data/models/cell_event.dart';
 import '../data/models/cell_test.dart';
 import '../data/models/lote.dart';
 import '../data/preferences_store.dart';
+import '../data/repositories/celda_foto_repository.dart';
 import '../data/repositories/celda_repository.dart';
 import '../data/repositories/cell_event_repository.dart';
 import '../data/repositories/cell_test_repository.dart';
@@ -19,12 +21,14 @@ class CeldaController extends ChangeNotifier {
     LoteRepository? lotes,
     CellTestRepository? tests,
     CellEventRepository? eventos,
+    CeldaFotoRepository? fotos,
     PreferencesStore? prefs,
     PhotoService photoService = const PhotoService(),
   })  : _celdas = celdas ?? CeldaRepository(),
         _lotes = lotes ?? LoteRepository(),
         _tests = tests ?? CellTestRepository(),
         _eventos = eventos ?? CellEventRepository(),
+        _fotos = fotos ?? CeldaFotoRepository(),
         _prefs = prefs ?? PreferencesStore(),
         _photos = photoService;
 
@@ -32,6 +36,7 @@ class CeldaController extends ChangeNotifier {
   final LoteRepository _lotes;
   final CellTestRepository _tests;
   final CellEventRepository _eventos;
+  final CeldaFotoRepository _fotos;
   final PreferencesStore _prefs;
   final PhotoService _photos;
 
@@ -182,6 +187,11 @@ class CeldaController extends ChangeNotifier {
 
   Future<void> deleteCelda(Celda celda) async {
     if (celda.id == null) return;
+    // Todas las fotos de la galería, no solo la portada.
+    final rutas = await _fotos.deleteByCelda(celda.id!);
+    for (final r in rutas) {
+      await _photos.delete(r);
+    }
     await _photos.delete(celda.fotoPath);
     await _celdas.delete(celda.id!);
     await refresh();
@@ -217,6 +227,113 @@ class CeldaController extends ChangeNotifier {
     await refresh();
   }
 
+  // ---------- Fotos (galería) ----------
+
+  Future<List<CeldaFoto>> fotosOf(int celdaId) => _fotos.byCelda(celdaId);
+
+  /// Cuántas fotos tiene cada celda, de una sola consulta (para las listas).
+  Future<Map<int, int>> fotosPorCelda() => _fotos.countsByCelda();
+
+  /// Añade una foto a la galería de la celda.
+  ///
+  /// La primera foto pasa a ser la portada (`foto_path`), que es la que usan
+  /// las etiquetas, los informes y las listas.
+  Future<void> addFoto(
+    Celda celda,
+    String path, {
+    PhotoTag etiqueta = PhotoTag.evidence,
+    String? nota,
+  }) async {
+    if (celda.id == null) return;
+    await _fotos.insert(
+      CeldaFoto(
+        celdaId: celda.id!,
+        path: path,
+        etiqueta: etiqueta,
+        fecha: DateTime.now(),
+        nota: nota,
+      ),
+    );
+
+    if (celda.fotoPath == null || celda.fotoPath!.isEmpty) {
+      await _celdas.update(celda.copyWith(fotoPath: path));
+    }
+
+    await _eventos.insert(
+      CellEvent(
+        celdaId: celda.id!,
+        tipo: EventType.photo,
+        fecha: DateTime.now(),
+        nota: 'Foto añadida (${etiqueta.label})',
+      ),
+    );
+    await refresh();
+  }
+
+  /// Quita una foto de la galería y borra el archivo.
+  ///
+  /// Si era la portada, la sustituye la siguiente foto que quede.
+  Future<void> removeFoto(Celda celda, CeldaFoto foto) async {
+    if (celda.id == null || foto.id == null) return;
+    await _fotos.delete(foto.id!);
+
+    if (celda.fotoPath == foto.path) {
+      final restantes = await _fotos.byCelda(celda.id!);
+      await _celdas.update(
+        celda.copyWith(fotoPath: restantes.isEmpty ? '' : restantes.first.path),
+      );
+    }
+
+    await _photos.delete(foto.path);
+    await refresh();
+  }
+
+  /// Cambia la etiqueta de una foto de la galería.
+  Future<void> setFotoEtiqueta(CeldaFoto foto, PhotoTag etiqueta) async {
+    if (foto.id == null) return;
+    await _fotos.update(foto.copyWith(etiqueta: etiqueta));
+    await refresh();
+  }
+
+  // ---------- Duplicar ----------
+
+  /// Copia una celda con un código nuevo, para casos repetidos.
+  ///
+  /// Copia los datos técnicos pero **no** el historial: la copia nace
+  /// recepcionada, sin mediciones, sin veredicto y sin fotos.
+  Future<int> duplicarCelda(Celda celda) async {
+    final codigo = await suggestCodigo();
+    final copia = Celda(
+      loteId: celda.loteId,
+      codigoInterno: codigo,
+      marca: celda.marca,
+      modelo: celda.modelo,
+      quimica: celda.quimica,
+      capacidadNominalMah: celda.capacidadNominalMah,
+      voltajeNominal: celda.voltajeNominal,
+      fechaFabricacion: celda.fechaFabricacion,
+      estado: CellState.received,
+      ubicacion: celda.ubicacion,
+      notas: celda.notas,
+      catalogRef: celda.catalogRef,
+      irNominalMohm: celda.irNominalMohm,
+      createdAt: DateTime.now(),
+    );
+
+    final id = await _celdas.insert(copia);
+    await _eventos.insert(
+      CellEvent(
+        celdaId: id,
+        tipo: EventType.created,
+        estadoNuevo: CellState.received.name,
+        fecha: DateTime.now(),
+        nota: 'Copia de ${celda.codigoInterno}',
+      ),
+    );
+    await refresh();
+    return id;
+  }
+
   // ---------- Tests ----------
 
   Future<List<CellTest>> testsOf(int celdaId) => _tests.byCelda(celdaId);
@@ -227,7 +344,17 @@ class CeldaController extends ChangeNotifier {
 
   /// Registra una medición: recalcula SoH/veredicto y actualiza la celda.
   Future<void> addTest(Celda celda, CellTest test) async {
-    if (celda.id == null) return;
+    await addTestRapido(celda, test);
+    await refresh();
+  }
+
+  /// Registra una medición **sin recargar** el inventario.
+  ///
+  /// El modo masivo guarda decenas de celdas seguidas: recargar todo el
+  /// inventario después de cada una lo volvería lento y haría parpadear la
+  /// pantalla. Quien la use llama a [refresh] al cerrar la sesión.
+  Future<CellTest> addTestRapido(Celda celda, CellTest test) async {
+    if (celda.id == null) return test;
 
     final result = classifyByCapacity(
       measuredMah: test.capacidadMedidaMah,
@@ -247,7 +374,7 @@ class CeldaController extends ChangeNotifier {
     );
 
     await _saveTest(celdaId: celda.id!, test: conResultado, celda: nuevaCelda);
-    await refresh();
+    return conResultado;
   }
 
   Future<void> _saveTest({

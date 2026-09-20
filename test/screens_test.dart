@@ -154,6 +154,60 @@ void main() {
     expect(tester.getSize(find.text('C-0007')).width, greaterThan(60));
   });
 
+  testWidgets('el inventario ofrece medir las celdas pendientes',
+      (tester) async {
+    phone(tester);
+    final c = fake(
+      total: 3,
+      celdas: [
+        Celda(
+          id: 1,
+          codigoInterno: 'C-0001',
+          estado: CellState.received,
+          createdAt: DateTime(2026, 9, 20),
+        ),
+        Celda(
+          id: 2,
+          codigoInterno: 'C-0002',
+          estado: CellState.received,
+          createdAt: DateTime(2026, 9, 20),
+        ),
+        Celda(
+          id: 3,
+          codigoInterno: 'C-0003',
+          estado: CellState.classified,
+          veredicto: Verdict.a,
+          sohPct: 93,
+          createdAt: DateTime(2026, 9, 20),
+        ),
+      ],
+    );
+    await pump(tester, const InventoryScreen(), c);
+
+    expect(find.text('2 celdas pendientes de medir'), findsOneWidget);
+  });
+
+  testWidgets('con todo medido no aparece el aviso de pendientes',
+      (tester) async {
+    phone(tester);
+    final c = fake(
+      total: 1,
+      celdas: [
+        Celda(
+          id: 1,
+          codigoInterno: 'C-0001',
+          estado: CellState.classified,
+          veredicto: Verdict.a,
+          sohPct: 93,
+          createdAt: DateTime(2026, 9, 20),
+        ),
+      ],
+    );
+    await pump(tester, const InventoryScreen(), c);
+
+    expect(find.textContaining('pendientes de medir'), findsNothing);
+  });
+
   testWidgets('el informe de inventario sin celdas avisa en vez de fallar',
       (tester) async {
     phone(tester);

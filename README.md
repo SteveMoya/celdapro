@@ -29,6 +29,11 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
   nueva con los datos que traía la etiqueta.
 - 🛡️ **Respaldo y restauración**: base de datos, fotos y ajustes en un solo archivo `.celdapro`,
   con vista previa antes de restaurar y copia de seguridad previa automática.
+- 🧪 **Test masivo**: registra las mediciones de un lote entero en serie, sin volver al inventario.
+  Escribe la medida, ve el veredicto en vivo y el botón «listo» del teclado pasa a la siguiente.
+  El operador se mantiene para toda la sesión.
+- 📷 **Varias fotos por celda** con etiqueta (antes / después / fallo / otra), visor con zoom y
+  portada configurable.
 - 📄 **Informes en PDF**: ficha completa de una celda (datos, mediciones y trazabilidad), informe
   de un lote y del inventario completo, con el logo de la marca, línea de firma y estadísticas
   (aptas, % rechazo, SoH medio/mínimo/máximo, capacidad aprovechable). Se imprimen o se comparten
@@ -90,6 +95,7 @@ lib/
 │   ├── classification.dart   # SoH + veredicto (lógica pura, testeada)
 │   ├── diagnostics.dart      # Diagnóstico de resistencia interna
 │   ├── cell_stats.dart       # Resumen numérico de celdas (informes y dashboard)
+│   ├── batch_session.dart    # Cola del registro de mediciones en serie
 │   ├── cell_code.dart        # Contenido de la etiqueta (barras + QR)
 │   └── app_info.dart         # Nombre y versión (una sola fuente)
 ├── data/
@@ -113,6 +119,7 @@ lib/
     ├── inventory/            # lista, detalle, formularios, escáner
     ├── labels/               # vista previa e impresión de etiquetas
     ├── reports/              # informes PDF con vista previa
+    ├── tests/                # registro de mediciones en serie (test masivo)
     ├── lotes/                # lotes
     └── settings/             # umbrales, respaldo, CSV, privacidad
 
@@ -130,8 +137,8 @@ hinchadas, dañadas o sin tensión deben ir a **rechazo/aislamiento**, nunca a r
 
 ## 📋 Estado
 
-MVP completo + marca, respaldo, etiquetas e informes (TODO 18). Ver el plan de mejoras en
-`.hermes/plans/2026-09-18-celdapro-mejoras.md`.
+MVP completo + marca, respaldo, etiquetas, informes y trabajo por lote (TODO 18). Ver el plan de
+mejoras en `.hermes/plans/2026-09-18-celdapro-mejoras.md`.
 
-Pendiente: entrada masiva de tests, varias fotos por celda, tests de la capa de datos,
+Pendiente: tests de la capa de datos, acciones en bloque sobre un lote,
 captura de BMS por Bluetooth y armado de packs.

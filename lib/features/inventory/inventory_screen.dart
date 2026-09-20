@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/batch_session.dart';
 import '../../core/cell_code.dart';
 import '../../core/classification.dart';
 import '../../data/models/celda.dart';
@@ -8,6 +9,7 @@ import '../../data/repositories/celda_repository.dart';
 import '../../state/celda_controller.dart';
 import '../labels/label_screen.dart';
 import '../reports/report_screen.dart';
+import '../tests/batch_test_screen.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -124,6 +126,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
           const SizedBox(height: 4),
 
+          // Aviso de celdas pendientes: el atajo al registro en serie.
+          if (!c.loading && _pendientes(c) > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: () => _testMasivo(context, c),
+                  icon: const Icon(Icons.playlist_add_check, size: 20),
+                  label: Text(
+                    _pendientes(c) == 1
+                        ? '1 celda pendiente de medir'
+                        : '${_pendientes(c)} celdas pendientes de medir',
+                  ),
+                ),
+              ),
+            ),
+
           // Lista.
           Expanded(
             child: c.loading
@@ -191,6 +211,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
             label: const Text('Celda'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Celdas de la vista actual que aún no tienen medición.
+  static int _pendientes(CeldaController c) =>
+      BatchSession.pendientesDe(c.celdas).length;
+
+  /// Abre el registro de mediciones en serie con las celdas pendientes.
+  Future<void> _testMasivo(BuildContext context, CeldaController c) async {
+    final lista = BatchSession.pendientesDe(c.celdas);
+    if (lista.isEmpty) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => BatchTestScreen(
+          celdas: lista,
+          titulo: 'Test masivo (${lista.length})',
+        ),
       ),
     );
   }

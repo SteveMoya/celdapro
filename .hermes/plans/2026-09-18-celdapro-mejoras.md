@@ -2,8 +2,8 @@
 
 > **Fecha:** 2026-09-18 (actualizado 2026-09-20)
 > **Autor:** Roxy (asistente)
-> **Estado:** ✅ **Aprobado por Steve (opción A) — M1, M2, M3 y M6 ejecutados**
-> **Versión actual de la app:** v0.4.0
+> **Estado:** ✅ **Aprobado por Steve (opción A) — M1, M2, M3, M4 y M6 ejecutados**
+> **Versión actual de la app:** v0.5.0
 > **Plan base:** `2026-09-17-celdapro-mvp.md`
 
 ---
@@ -15,9 +15,9 @@
 | **M1 — Blindar los datos** (respaldo/restauración + recordatorio) | ✅ Hecho en v0.3.0 |
 | **M2 — Etiquetas con código de barras** (generar, imprimir, escanear) | ✅ Hecho en v0.3.0 |
 | **M3 — Informes PDF** (celda, lote, inventario) | ✅ Hecho en v0.4.0 |
-| **M4 — Trabajo por lote** (entrada masiva de tests, varias fotos) | ⏳ Pendiente |
+| **M4 — Trabajo por lote** (entrada masiva de tests, varias fotos) | ✅ Hecho en v0.5.0 (falta marcar en bloque) |
 | **M5 — Calidad y escala** (tests de la BD, paginación, filtros) | ⏳ Pendiente |
-| **M6 — Distribución** (keystore real + CI de release) | 🟡 Hecho en código; falta que Steve genere el keystore y un PAT con scope `workflow`
+| **M6 — Distribución** (keystore real + CI de release) | 🟡 Hecho en código; falta que Steve genere el keystore y un PAT con scope `workflow` |
 
 ---
 
