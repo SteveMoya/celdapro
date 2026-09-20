@@ -51,6 +51,9 @@ class CeldaController extends ChangeNotifier {
   /// Fecha del último respaldo (null si nunca se ha hecho uno).
   DateTime? ultimoRespaldo;
 
+  /// Nombre del taller: encabeza las etiquetas y los informes.
+  String? nombreTaller;
+
   /// Días desde el último respaldo, o null si no hay ninguno.
   int? get diasSinRespaldo =>
       ultimoRespaldo == null ? null : DateTime.now().difference(ultimoRespaldo!).inDays;
@@ -69,6 +72,7 @@ class CeldaController extends ChangeNotifier {
     thresholds = await _prefs.loadThresholds();
     rejectReasons = await _prefs.loadRejectReasons();
     ultimoRespaldo = await _prefs.loadLastBackup();
+    nombreTaller = await _prefs.loadTaller();
     await refresh();
   }
 
@@ -319,6 +323,13 @@ class CeldaController extends ChangeNotifier {
   }
 
   // ---------- Ajustes ----------
+
+  /// Guarda el nombre del taller (encabeza etiquetas e informes).
+  Future<void> setNombreTaller(String? nombre) async {
+    await _prefs.saveTaller(nombre);
+    nombreTaller = await _prefs.loadTaller();
+    notifyListeners();
+  }
 
   Future<void> saveThresholds(Thresholds t) async {
     thresholds = t.sanitized();

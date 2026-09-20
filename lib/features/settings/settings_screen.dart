@@ -553,7 +553,10 @@ class _BackupCardState extends State<_BackupCard> {
       ),
     );
     if (nombre == null) return;
-    await _prefs.saveTaller(nombre);
+    if (!mounted) return;
+    // Se guarda en el controlador para que las etiquetas y los informes lo
+    // recojan sin tener que releerlo cada uno por su cuenta.
+    await context.read<CeldaController>().setNombreTaller(nombre);
     if (mounted) setState(() => _taller = nombre.isEmpty ? null : nombre);
   }
 

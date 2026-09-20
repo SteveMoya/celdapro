@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/classification.dart';
 import '../../data/models/lote.dart';
 import '../../state/celda_controller.dart';
+import '../reports/report_screen.dart';
 import '../widgets/metric_card.dart';
 import 'lote_form_screen.dart';
 
@@ -93,6 +94,20 @@ class _LoteCard extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
+                  if (celdas.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      tooltip: 'Informe del lote en PDF',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => ReportScreen(
+                            scope: ReportScope.lote,
+                            lote: lote,
+                          ),
+                        ),
+                      ),
+                    ),
                   Text(
                     '${celdas.length} celdas',
                     style: Theme.of(context).textTheme.labelLarge,

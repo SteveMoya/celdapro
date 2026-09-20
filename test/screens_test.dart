@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:celdapro/core/classification.dart';
 import 'package:celdapro/core/theme.dart';
 import 'package:celdapro/data/models/celda.dart';
+import 'package:celdapro/data/models/lote.dart';
 import 'package:celdapro/features/dashboard/dashboard_screen.dart';
 import 'package:celdapro/features/inventory/inventory_screen.dart';
+import 'package:celdapro/features/reports/report_screen.dart';
 import 'package:celdapro/features/settings/settings_screen.dart';
 import 'package:celdapro/state/celda_controller.dart';
 
@@ -150,5 +152,48 @@ void main() {
     await pump(tester, const InventoryScreen(), c);
 
     expect(tester.getSize(find.text('C-0007')).width, greaterThan(60));
+  });
+
+  testWidgets('el informe de inventario sin celdas avisa en vez de fallar',
+      (tester) async {
+    phone(tester);
+    await pump(
+      tester,
+      const ReportScreen(scope: ReportScope.inventario),
+      fake(),
+    );
+
+    expect(find.textContaining('No hay celdas'), findsOneWidget);
+  });
+
+  testWidgets('el informe de un lote sin celdas avisa', (tester) async {
+    phone(tester);
+    await pump(
+      tester,
+      ReportScreen(
+        scope: ReportScope.lote,
+        lote: Lote(
+          id: 1,
+          codigo: 'L-2026-09-A',
+          fechaRecepcion: DateTime(2026, 9, 2),
+        ),
+      ),
+      fake(),
+    );
+
+    expect(find.textContaining('No hay celdas'), findsOneWidget);
+  });
+
+  testWidgets('la ficha sin celda muestra un error entendible',
+      (tester) async {
+    phone(tester);
+    await pump(
+      tester,
+      const ReportScreen(scope: ReportScope.celda),
+      fake(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No se pudo generar el informe.'), findsOneWidget);
   });
 }

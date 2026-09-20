@@ -44,6 +44,7 @@ class _LabelScreenState extends State<LabelScreen> {
 
   Future<void> _imprimir() async {
     final lotes = _lotesById(context);
+    final taller = context.read<CeldaController>().nombreTaller;
     setState(() => _generando = true);
     try {
       await Printing.layoutPdf(
@@ -52,6 +53,7 @@ class _LabelScreenState extends State<LabelScreen> {
           celdas: widget.celdas,
           lotesById: lotes,
           formato: _formato,
+          nombreTaller: taller,
         ),
       );
     } finally {
@@ -67,6 +69,7 @@ class _LabelScreenState extends State<LabelScreen> {
         celdas: widget.celdas,
         lotesById: _lotesById(context),
         formato: _formato,
+        nombreTaller: context.read<CeldaController>().nombreTaller,
       );
       await Printing.sharePdf(
         bytes: bytes,

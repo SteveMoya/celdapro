@@ -7,6 +7,7 @@ import '../../data/models/celda.dart';
 import '../../data/repositories/celda_repository.dart';
 import '../../state/celda_controller.dart';
 import '../labels/label_screen.dart';
+import '../reports/report_screen.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -168,6 +169,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
               tooltip: 'Etiquetas del listado',
               onPressed: () => _etiquetas(context, c.celdas),
               child: const Icon(Icons.qr_code_2_outlined),
+            ),
+            const SizedBox(height: 10),
+            FloatingActionButton.small(
+              heroTag: 'report',
+              tooltip: 'Informe de inventario en PDF',
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const ReportScreen(scope: ReportScope.inventario),
+                ),
+              ),
+              child: const Icon(Icons.picture_as_pdf_outlined),
             ),
           ],
           const SizedBox(height: 10),

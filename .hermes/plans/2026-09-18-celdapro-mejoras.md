@@ -1,10 +1,23 @@
 # Plan de Mejora — CeldaPro
 
-> **Fecha:** 2026-09-18
+> **Fecha:** 2026-09-18 (actualizado 2026-09-20)
 > **Autor:** Roxy (asistente)
-> **Estado:** ⏳ **Pendiente de aprobación de Steve**
-> **Versión actual de la app:** v0.2.0 (APK publicado, firma de depuración)
+> **Estado:** ✅ **Aprobado por Steve (opción A) — M1, M2, M3 y M6 ejecutados**
+> **Versión actual de la app:** v0.4.0
 > **Plan base:** `2026-09-17-celdapro-mvp.md`
+
+---
+
+## Estado de ejecución
+
+| Hito | Estado |
+|---|---|
+| **M1 — Blindar los datos** (respaldo/restauración + recordatorio) | ✅ Hecho en v0.3.0 |
+| **M2 — Etiquetas con código de barras** (generar, imprimir, escanear) | ✅ Hecho en v0.3.0 |
+| **M3 — Informes PDF** (celda, lote, inventario) | ✅ Hecho en v0.4.0 |
+| **M4 — Trabajo por lote** (entrada masiva de tests, varias fotos) | ⏳ Pendiente |
+| **M5 — Calidad y escala** (tests de la BD, paginación, filtros) | ⏳ Pendiente |
+| **M6 — Distribución** (keystore real + CI de release) | 🟡 Hecho en código; falta que Steve genere el keystore y un PAT con scope `workflow`
 
 ---
 

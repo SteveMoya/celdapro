@@ -12,6 +12,7 @@ import '../../data/models/cell_test.dart';
 import '../../services/photo_service.dart';
 import '../../state/celda_controller.dart';
 import '../labels/label_screen.dart';
+import '../reports/report_screen.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
@@ -89,8 +90,17 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
             onSelected: (v) {
               if (v == 'delete') _confirmDelete(celda);
               if (v == 'label') _etiqueta(celda);
+              if (v == 'report') _informe(celda);
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'report',
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(Icons.picture_as_pdf_outlined),
+                  title: Text('Ficha en PDF'),
+                ),
+              ),
               PopupMenuItem(
                 value: 'label',
                 child: ListTile(
@@ -428,6 +438,18 @@ class _CeldaDetailScreenState extends State<CeldaDetailScreen> {
         builder: (_) => LabelScreen(
           celdas: [celda],
           titulo: 'Etiqueta ${celda.codigoInterno}',
+        ),
+      ),
+    );
+  }
+
+  /// Ficha de la celda en PDF (para entregar al cliente).
+  Future<void> _informe(Celda celda) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ReportScreen(
+          scope: ReportScope.celda,
+          celda: celda,
         ),
       ),
     );

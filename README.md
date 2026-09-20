@@ -4,8 +4,8 @@ App Android para **gestionar y organizar la restauración de celdas de litio** e
 registro por celda, test de capacidad, clasificación automática (A/B/C/Rechazo), trazabilidad
 completa y métricas del proceso. **100% local** — sin backend, sin cuentas, sin costos.
 
-Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras y QR · respaldo
-completo · exportar/importar CSV.
+Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras y QR · informes PDF
+· respaldo completo · exportar/importar CSV.
 
 ## ✨ Funcionalidades
 
@@ -29,6 +29,10 @@ completo · exportar/importar CSV.
   nueva con los datos que traía la etiqueta.
 - 🛡️ **Respaldo y restauración**: base de datos, fotos y ajustes en un solo archivo `.celdapro`,
   con vista previa antes de restaurar y copia de seguridad previa automática.
+- 📄 **Informes en PDF**: ficha completa de una celda (datos, mediciones y trazabilidad), informe
+  de un lote y del inventario completo, con el logo de la marca, línea de firma y estadísticas
+  (aptas, % rechazo, SoH medio/mínimo/máximo, capacidad aprovechable). Se imprimen o se comparten
+  para entregárselos al cliente.
 - 📊 **Dashboard** con celdas procesadas, % rechazo, SoH promedio y actividad reciente.
 - 📤 **Exportar CSV** e **importar inventario** existente.
 - 🎨 **Marca propia**: logo, icono y guía de marca en `brand/` (ver [BRAND.md](brand/BRAND.md)).
@@ -85,6 +89,7 @@ lib/
 │   ├── theme.dart            # Material 3 (verde litio #2E7D32)
 │   ├── classification.dart   # SoH + veredicto (lógica pura, testeada)
 │   ├── diagnostics.dart      # Diagnóstico de resistencia interna
+│   ├── cell_stats.dart       # Resumen numérico de celdas (informes y dashboard)
 │   ├── cell_code.dart        # Contenido de la etiqueta (barras + QR)
 │   └── app_info.dart         # Nombre y versión (una sola fuente)
 ├── data/
@@ -96,6 +101,8 @@ lib/
 ├── services/
 │   ├── code_service.dart     # generación de códigos de barras y QR
 │   ├── label_service.dart    # hojas de etiquetas en PDF
+│   ├── report_service.dart   # informes PDF (celda, lote, inventario)
+│   ├── pdf_fonts.dart        # Inter incrustada (acentos y Ω en los PDF)
 │   ├── backup_service.dart   # respaldo y restauración (.celdapro)
 │   ├── photo_service.dart    # fotos de evidencia
 │   └── csv_service.dart      # exportar/importar inventario
@@ -105,10 +112,13 @@ lib/
     ├── dashboard/            # métricas
     ├── inventory/            # lista, detalle, formularios, escáner
     ├── labels/               # vista previa e impresión de etiquetas
+    ├── reports/              # informes PDF con vista previa
     ├── lotes/                # lotes
     └── settings/             # umbrales, respaldo, CSV, privacidad
 
 brand/                        # marca: logo, icono, brand board y guía
+assets/fonts/                 # Inter (PDF)
+assets/images/                # logo para los informes
 tools/generar_catalogo.py     # regenera cell_catalog.dart desde battery-tool
 tools/generar_keystore.sh     # crea el keystore de firma
 ```
@@ -120,8 +130,8 @@ hinchadas, dañadas o sin tensión deben ir a **rechazo/aislamiento**, nunca a r
 
 ## 📋 Estado
 
-MVP completo + marca y respaldo (TODO 18). Ver el plan de mejoras en
+MVP completo + marca, respaldo, etiquetas e informes (TODO 18). Ver el plan de mejoras en
 `.hermes/plans/2026-09-18-celdapro-mejoras.md`.
 
-Pendiente: informes PDF por celda/lote, entrada masiva de tests, varias fotos por celda,
-tests de la capa de datos, captura de BMS por Bluetooth y armado de packs.
+Pendiente: entrada masiva de tests, varias fotos por celda, tests de la capa de datos,
+captura de BMS por Bluetooth y armado de packs.
