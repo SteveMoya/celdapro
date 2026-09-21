@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -302,6 +303,69 @@ void main() {
       );
       guardar('umbrales', bytes);
       expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    });
+  });
+
+  group('Marca del taller (Pro)', () {
+    /// Crea un PNG pequeño real, como el logo que elige el taller.
+    Future<File> logoDePrueba() async {
+      final dir = Directory.systemTemp.createTempSync('celdapro-logo');
+      final f = File('${dir.path}/logo.png');
+      // Un PNG 1x1 válido en base64.
+      await f.writeAsBytes(base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8'
+        'z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      ));
+      return f;
+    }
+
+    test('sin nombre de taller el informe sale igual', () async {
+      // Es lo que garantiza que generar un informe NO dependa de tener Pro:
+      // con la licencia inactiva no se pasa ni nombre ni logo.
+      final pdf = await ReportService().fichaCelda(
+        celda: celda(1, 'C-0001', veredicto: Verdict.a, soh: 94),
+      );
+
+      expect(pdf.length, greaterThan(1000));
+      expect(String.fromCharCodes(pdf.take(5)), '%PDF-');
+    });
+
+    test('con el logo del taller el informe sigue siendo válido', () async {
+      final logo = await logoDePrueba();
+      final pdf = await ReportService().fichaCelda(
+        celda: celda(1, 'C-0001', veredicto: Verdict.a, soh: 94),
+        nombreTaller: 'Taller Moya',
+        logoPath: logo.path,
+      );
+
+      expect(String.fromCharCodes(pdf.take(5)), '%PDF-');
+      // El logo entra en el documento como imagen.
+      final texto = String.fromCharCodes(pdf);
+      expect(texto.contains('/Image'), isTrue);
+    });
+
+    test('un logo ilegible no impide entregar el informe', () async {
+      // Si el archivo desapareció o está corrupto, el informe sale con la
+      // marca de CeldaPro en vez de fallar delante del cliente.
+      final pdf = await ReportService().fichaCelda(
+        celda: celda(1, 'C-0001', veredicto: Verdict.a, soh: 94),
+        nombreTaller: 'Taller Moya',
+        logoPath: '/ruta/que/no/existe/logo.png',
+      );
+
+      expect(String.fromCharCodes(pdf.take(5)), '%PDF-');
+    });
+
+    test('el informe de inventario también acepta la marca del taller',
+        () async {
+      final logo = await logoDePrueba();
+      final pdf = await ReportService().informe(
+        celdas: [celda(1, 'C-0001', veredicto: Verdict.a, soh: 92)],
+        nombreTaller: 'Taller Moya',
+        logoPath: logo.path,
+      );
+
+      expect(String.fromCharCodes(pdf.take(5)), '%PDF-');
     });
   });
 

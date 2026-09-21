@@ -16,6 +16,10 @@ class PreferencesStore {
   static const _rejectReasonsKey = 'reject_reasons';
   static const _lastBackupKey = 'ultimo_respaldo';
   static const _tallerKey = 'nombre_taller';
+  static const _licenciaKey = 'licencia_pro';
+  static const _logoKey = 'logo_taller';
+  static const _updateAvisadaKey = 'update_ultima_avisada';
+  static const _updateAutoKey = 'update_automatico';
 
   static const defaultRejectReasons = <String>[
     'Capacidad baja',
@@ -87,6 +91,8 @@ class PreferencesStore {
       _set(_lastBackupKey, '${fecha.millisecondsSinceEpoch}');
 
   /// Nombre del taller, para las etiquetas y los informes.
+  ///
+  /// Solo se usa en la versión Pro: los informes salen igual sin él.
   Future<String?> loadTaller() async {
     final v = await _get(_tallerKey);
     return (v == null || v.trim().isEmpty) ? null : v.trim();
@@ -94,4 +100,38 @@ class PreferencesStore {
 
   Future<void> saveTaller(String? nombre) =>
       _set(_tallerKey, (nombre ?? '').trim());
+
+  // ---------- Versión Pro ----------
+
+  /// Código de licencia guardado (null si nunca se activó).
+  Future<String?> loadLicencia() async {
+    final v = await _get(_licenciaKey);
+    return (v == null || v.trim().isEmpty) ? null : v.trim();
+  }
+
+  Future<void> saveLicencia(String? codigo) =>
+      _set(_licenciaKey, (codigo ?? '').trim());
+
+  /// Ruta del logo del taller (imagen elegida por el usuario).
+  Future<String?> loadLogoTaller() async {
+    final v = await _get(_logoKey);
+    return (v == null || v.trim().isEmpty) ? null : v.trim();
+  }
+
+  Future<void> saveLogoTaller(String? ruta) =>
+      _set(_logoKey, (ruta ?? '').trim());
+
+  // ---------- Actualizaciones ----------
+
+  /// Última versión sobre la que ya se avisó (para no repetir el aviso).
+  Future<String?> loadUpdateAvisada() => _get(_updateAvisadaKey);
+
+  Future<void> saveUpdateAvisada(String version) =>
+      _set(_updateAvisadaKey, version);
+
+  /// ¿Buscar actualizaciones sola al abrir la app? (por defecto, sí).
+  Future<bool> loadUpdateAutomatico() async => (await _get(_updateAutoKey)) != '0';
+
+  Future<void> saveUpdateAutomatico(bool activo) =>
+      _set(_updateAutoKey, activo ? '1' : '0');
 }

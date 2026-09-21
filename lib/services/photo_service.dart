@@ -45,6 +45,41 @@ class PhotoService {
   /// Carpeta donde viven las fotos de evidencia (para respaldos).
   Future<Directory> directorio() => _photosDir();
 
+  /// Elige el logo del taller (versión Pro) y lo copia al almacenamiento.
+  ///
+  /// Va en su propia carpeta `marca/` para no mezclarlo con las fotos de las
+  /// celdas: el respaldo las trata distinto y la galería no debe listarlo.
+  Future<String?> pickLogo() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      imageQuality: 90,
+    );
+    if (picked == null) return null;
+
+    final dir = await _marcaDir();
+    final ext = p.extension(picked.path).isEmpty
+        ? '.png'
+        : p.extension(picked.path).toLowerCase();
+    final dest = p.join(
+      dir.path,
+      'logo_${DateTime.now().millisecondsSinceEpoch}$ext',
+    );
+    await File(picked.path).copy(dest);
+    return dest;
+  }
+
+  Future<Directory> _marcaDir() async {
+    final base = await getApplicationDocumentsDirectory();
+    final dir = Directory(p.join(base.path, 'marca'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Carpeta de la marca del taller (para respaldos).
+  Future<Directory> directorioMarca() => _marcaDir();
+
   /// Borra la foto de una celda si existe (al eliminar o reemplazar).
   Future<void> delete(String? path) async {
     if (path == null || path.isEmpty) return;

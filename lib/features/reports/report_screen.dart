@@ -79,7 +79,10 @@ class _ReportScreenState extends State<ReportScreen> {
           lote: celda.loteId == null ? null : c.lotesById[celda.loteId],
           tests: tests,
           eventos: eventos,
-          nombreTaller: c.nombreTaller,
+          // La marca del taller es Pro: sin licencia, el informe sale con la
+          // marca de CeldaPro y no pide ningún dato.
+          nombreTaller: c.esPro ? c.nombreTaller : null,
+          logoPath: c.esPro ? c.logoTaller : null,
           foto: await _leerFoto(celda),
         );
       case ReportScope.lote:
@@ -89,7 +92,8 @@ class _ReportScreenState extends State<ReportScreen> {
           lotesById: c.lotesById,
           lote: widget.lote,
           thresholds: c.thresholds,
-          nombreTaller: c.nombreTaller,
+          nombreTaller: c.esPro ? c.nombreTaller : null,
+          logoPath: c.esPro ? c.logoTaller : null,
         );
     }
   }
@@ -135,7 +139,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: FutureBuilder<Uint8List>(
                     // Se regenera al cambiar de alcance o el nombre del taller.
                     key: ValueKey('${widget.scope}-${widget.celda?.id}-'
-                        '${widget.lote?.id}-${c.nombreTaller}'),
+                        '${widget.lote?.id}-${c.esPro ? c.nombreTaller : null}'),
                     future: _construir(c),
                     builder: (ctx, snap) {
                       if (snap.hasError) {

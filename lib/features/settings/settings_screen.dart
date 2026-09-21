@@ -15,6 +15,7 @@ import '../../services/backup_service.dart';
 import '../../services/csv_service.dart';
 import '../../state/celda_controller.dart';
 import '../widgets/verdict_chip.dart';
+import 'pro_settings.dart';
 
 /// Pantalla 6: umbrales de clasificación, motivos de rechazo y datos (CSV).
 class SettingsScreen extends StatelessWidget {
@@ -103,6 +104,31 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 22),
 
+        Text('Marca del taller (Pro)',
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          'Opcional. Los informes y las etiquetas salen igual sin esto, con la '
+          'marca de CeldaPro; con Pro puedes poner el nombre y el logo de tu '
+          'taller.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 10),
+        const ProCard(),
+
+        const SizedBox(height: 22),
+        Text('Actualizaciones',
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          'La app revisa si hay una versión nueva en GitHub. Es la única '
+          'consulta que sale del teléfono y no incluye ningún dato tuyo.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 10),
+        const UpdatesCard(),
+        const SizedBox(height: 22),
+
         Text('Privacidad y seguridad',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -130,7 +156,17 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Todos los datos se guardan SOLO en este teléfono. La app no '
-                  'envía nada a ningún servidor y no necesita cuenta.',
+                  'envía tu inventario, tus fotos ni tus ajustes a ningún '
+                  'servidor y no necesita cuenta.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Lo único que sale del teléfono es la consulta de si hay una '
+                  'versión nueva (a GitHub, sin ningún dato tuyo). Puedes '
+                  'desactivarla en Actualizaciones.',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onErrorContainer,
                   ),
@@ -151,7 +187,7 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 14),
         Center(
           child: Text(
-            'CeldaPro 0.1.0 — 100 % local',
+            'CeldaPro $appVersionFull — datos 100 % locales',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
@@ -378,7 +414,6 @@ class _BackupCardState extends State<_BackupCard> {
   final _service = BackupService();
 
   DateTime? _ultimo;
-  String? _taller;
   bool _cargando = true;
   bool _ocupado = false;
 
@@ -393,11 +428,9 @@ class _BackupCardState extends State<_BackupCard> {
 
   Future<void> _cargar() async {
     final ultimo = await _prefs.loadLastBackup();
-    final taller = await _prefs.loadTaller();
     if (!mounted) return;
     setState(() {
       _ultimo = ultimo;
-      _taller = taller;
       _cargando = false;
     });
   }
@@ -418,7 +451,9 @@ class _BackupCardState extends State<_BackupCard> {
     try {
       final bytes = await _service.crear(
         versionApp: appVersionFull,
-        nombreTaller: _taller,
+        // El nombre del taller (Pro, opcional) viaja en la ficha del respaldo
+        // para saber de quién es el archivo cuando hay varios.
+        nombreTaller: context.read<CeldaController>().nombreTaller,
       );
       final dir = await getTemporaryDirectory();
       final archivo = File(p.join(dir.path, BackupService.nombreArchivo()));
@@ -527,39 +562,6 @@ class _BackupCardState extends State<_BackupCard> {
     }
   }
 
-  Future<void> _editarTaller() async {
-    final ctrl = TextEditingController(text: _taller ?? '');
-    final nombre = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nombre del taller'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Aparecerá en las etiquetas y los informes',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-    if (nombre == null) return;
-    if (!mounted) return;
-    // Se guarda en el controlador para que las etiquetas y los informes lo
-    // recojan sin tener que releerlo cada uno por su cuenta.
-    await context.read<CeldaController>().setNombreTaller(nombre);
-    if (mounted) setState(() => _taller = nombre.isEmpty ? null : nombre);
-  }
-
   String _mb(int bytes) => '${(bytes / 1048576).toStringAsFixed(1)} MB';
 
   @override
@@ -606,13 +608,6 @@ class _BackupCardState extends State<_BackupCard> {
             subtitle: const Text('Reemplaza los datos actuales'),
             enabled: !_ocupado,
             onTap: _ocupado ? null : _restaurar,
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.storefront_outlined),
-            title: const Text('Nombre del taller'),
-            subtitle: Text(_taller ?? 'Sin definir'),
-            onTap: _editarTaller,
           ),
           if (_ocupado)
             const Padding(

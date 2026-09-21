@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
@@ -36,10 +37,11 @@ class ReportService {
     List<CellTest> tests = const [],
     List<CellEvent> eventos = const [],
     String? nombreTaller,
+    String? logoPath,
     Uint8List? foto,
   }) async {
     final fuentes = await PdfFonts.load();
-    final marca = await _logo();
+    final marca = await _logo(logoPath);
     final doc = pw.Document(title: 'Celda ${celda.codigoInterno} — CeldaPro');
 
     doc.addPage(
@@ -133,10 +135,11 @@ class ReportService {
     Lote? lote,
     Thresholds thresholds = const Thresholds(),
     String? nombreTaller,
+    String? logoPath,
     String? operador,
   }) async {
     final fuentes = await PdfFonts.load();
-    final marca = await _logo();
+    final marca = await _logo(logoPath);
     final stats = CellStats.from(celdas);
     final titulo = lote == null ? 'Informe de inventario' : 'Informe de lote';
     final doc = pw.Document(
@@ -194,8 +197,21 @@ class ReportService {
 
   // ---------- Piezas compartidas ----------
 
-  /// Carga el logo de la marca (null si el asset no está disponible).
-  Future<pw.MemoryImage?> _logo() async {
+  /// Carga el logo del informe.
+  ///
+  /// Si el taller tiene su propio logo (versión Pro) se usa ese; si no, el
+  /// logo de CeldaPro. Devuelve null solo si no se puede leer ninguno: en ese
+  /// caso el informe sale igual, con el nombre escrito.
+  Future<pw.MemoryImage?> _logo(String? logoPath) async {
+    if (logoPath != null && logoPath.isNotEmpty) {
+      try {
+        final f = File(logoPath);
+        if (await f.exists()) return pw.MemoryImage(await f.readAsBytes());
+      } catch (_) {
+        // Se cae al logo de CeldaPro: un logo ilegible no debe impedir
+        // entregarle el informe al cliente.
+      }
+    }
     try {
       final data = await _assetPng('assets/images/logo-lockup.png');
       return pw.MemoryImage(data);
@@ -210,6 +226,9 @@ class ReportService {
     String titulo,
     String? nombreTaller,
   ) {
+    final taller = (nombreTaller ?? '').trim();
+    final hayTaller = taller.isNotEmpty;
+
     return pw.Column(
       children: [
         pw.Row(
@@ -224,7 +243,7 @@ class ReportService {
             else
               pw.Expanded(
                 flex: 3,
-                child: pw.Text('CeldaPro',
+                child: pw.Text(hayTaller ? taller : 'CeldaPro',
                     style: fuentes.style(fontSize: 16, bold: true, color: _verde)),
               ),
             pw.Expanded(
@@ -234,12 +253,13 @@ class ReportService {
                 children: [
                   pw.Text(titulo,
                       style: fuentes.style(fontSize: 12, bold: true)),
-                  pw.Text(
-                    nombreTaller == null || nombreTaller.isEmpty
-                        ? 'Generado el ${_fecha(DateTime.now())}'
-                        : '$nombreTaller · ${_fecha(DateTime.now())}',
-                    style: fuentes.style(fontSize: 8, color: _gris),
-                  ),
+                  // El nombre del taller es opcional (versión Pro): sin él el
+                  // informe sale igual, solo con la marca de CeldaPro.
+                  if (hayTaller && logo != null)
+                    pw.Text(taller,
+                        style: fuentes.style(fontSize: 9, bold: true)),
+                  pw.Text('Generado el ${_fecha(DateTime.now())}',
+                      style: fuentes.style(fontSize: 8, color: _gris)),
                 ],
               ),
             ),
@@ -263,7 +283,8 @@ class ReportService {
           children: [
             pw.Text('CeldaPro — gestión de restauración de celdas',
                 style: fuentes.style(fontSize: 7, color: _gris)),
-            pw.Text('Página ${ctx.pageNumber} de ${ctx.pagesCount}',
+            pw.Text('Generado con CeldaPro · Página ${ctx.pageNumber} de '
+                '${ctx.pagesCount}',
                 style: fuentes.style(fontSize: 7, color: _gris)),
           ],
         ),

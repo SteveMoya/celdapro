@@ -42,9 +42,18 @@ class _LabelScreenState extends State<LabelScreen> {
     return map;
   }
 
+  /// Nombre del taller para las etiquetas: solo si la versión Pro está activa.
+  ///
+  /// Sin Pro las etiquetas salen igual, con la marca de CeldaPro.
+  static String? _tallerDe(BuildContext context) {
+    final c = context.read<CeldaController>();
+    return c.esPro ? c.nombreTaller : null;
+  }
+
   Future<void> _imprimir() async {
     final lotes = _lotesById(context);
-    final taller = context.read<CeldaController>().nombreTaller;
+    final c = context.read<CeldaController>();
+    final taller = c.esPro ? c.nombreTaller : null;
     setState(() => _generando = true);
     try {
       await Printing.layoutPdf(
@@ -69,7 +78,7 @@ class _LabelScreenState extends State<LabelScreen> {
         celdas: widget.celdas,
         lotesById: _lotesById(context),
         formato: _formato,
-        nombreTaller: context.read<CeldaController>().nombreTaller,
+        nombreTaller: _tallerDe(context),
       );
       await Printing.sharePdf(
         bytes: bytes,

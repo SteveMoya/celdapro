@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Para instalar el APK de actualización descargado.
+         getTemporaryDirectory() devuelve el directorio cache de la app;
+         también cubrimos files por si en el futuro se persiste el instalador
+         fuera de cache. -->
+    <cache-path name="cache" path="."/>
+    <files-path name="files" path="."/>
+</paths>

@@ -10,6 +10,7 @@ import '../../state/celda_controller.dart';
 import '../reports/report_screen.dart';
 import '../tests/batch_test_screen.dart';
 import '../widgets/metric_card.dart';
+import 'lote_celdas_screen.dart';
 import 'lote_form_screen.dart';
 
 /// Pantalla 5: lotes con su conteo y rendimiento.
@@ -163,20 +164,38 @@ class _LoteCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: pendientes.isEmpty
-                      ? null
-                      : () => _testMasivo(context, pendientes),
-                  icon: const Icon(Icons.playlist_add_check, size: 18),
-                  label: Text(
-                    pendientes.isEmpty
-                        ? 'Todo medido'
-                        : 'Medir ${pendientes.length} pendientes',
-                    overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: pendientes.isEmpty
+                          ? null
+                          : () => _testMasivo(context, pendientes),
+                      icon: const Icon(Icons.playlist_add_check, size: 18),
+                      label: Text(
+                        pendientes.isEmpty
+                            ? 'Todo medido'
+                            : 'Medir ${pendientes.length}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
+                  if (celdas.isNotEmpty)
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () => Navigator.of(context).push<void>(
+                          MaterialPageRoute(
+                            builder: (_) => LoteCeldasScreen(lote: lote),
+                          ),
+                        ),
+                        icon: const Icon(Icons.checklist, size: 18),
+                        label: const Text(
+                          'En bloque',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

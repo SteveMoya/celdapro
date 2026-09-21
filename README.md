@@ -32,8 +32,14 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
 - 🧪 **Test masivo**: registra las mediciones de un lote entero en serie, sin volver al inventario.
   Escribe la medida, ve el veredicto en vivo y el botón «listo» del teclado pasa a la siguiente.
   El operador se mantiene para toda la sesión.
+- ✅ **Acciones en bloque**: elegir varias celdas de un lote y cambiarles la etapa o la ubicación de
+  una vez, sin perder la trazabilidad (cada celda guarda su propio evento).
 - 📷 **Varias fotos por celda** con etiqueta (antes / después / fallo / otra), visor con zoom y
   portada configurable.
+- 🔄 **Actualizaciones integradas**: la app avisa cuando hay una versión nueva y la instala desde la
+  propia app (descarga el APK que corresponde a la arquitectura del teléfono).
+- ⭐ **Opcional (Pro)**: poner el nombre y el logo del taller en las etiquetas y los informes. Todo
+  lo demás funciona sin activarlo.
 - 📄 **Informes en PDF**: ficha completa de una celda (datos, mediciones y trazabilidad), informe
   de un lote y del inventario completo, con el logo de la marca, línea de firma y estadísticas
   (aptas, % rechazo, SoH medio/mínimo/máximo, capacidad aprovechable). Se imprimen o se comparten
@@ -94,6 +100,7 @@ lib/
 │   ├── theme.dart            # Material 3 (verde litio #2E7D32)
 │   ├── classification.dart   # SoH + veredicto (lógica pura, testeada)
 │   ├── diagnostics.dart      # Diagnóstico de resistencia interna
+│   ├── pro_license.dart      # licencia Pro (código con firma, sin conexión)
 │   ├── cell_stats.dart       # Resumen numérico de celdas (informes y dashboard)
 │   ├── batch_session.dart    # Cola del registro de mediciones en serie
 │   ├── cell_code.dart        # Contenido de la etiqueta (barras + QR)
@@ -108,6 +115,7 @@ lib/
 │   ├── code_service.dart     # generación de códigos de barras y QR
 │   ├── label_service.dart    # hojas de etiquetas en PDF
 │   ├── report_service.dart   # informes PDF (celda, lote, inventario)
+│   ├── update_service.dart   # revisión y descarga del APK desde GitHub
 │   ├── pdf_fonts.dart        # Inter incrustada (acentos y Ω en los PDF)
 │   ├── backup_service.dart   # respaldo y restauración (.celdapro)
 │   ├── photo_service.dart    # fotos de evidencia
@@ -127,7 +135,9 @@ brand/                        # marca: logo, icono, brand board y guía
 assets/fonts/                 # Inter (PDF)
 assets/images/                # logo para los informes
 tools/generar_catalogo.py     # regenera cell_catalog.dart desde battery-tool
+tools/generar_licencia.py     # genera códigos de la versión Pro
 tools/generar_keystore.sh     # crea el keystore de firma
+tools/verificar_migracion.py  # comprueba la migración de la base de datos
 ```
 
 ## ⚠️ Aviso de seguridad

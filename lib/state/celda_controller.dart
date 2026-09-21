@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/classification.dart';
+import '../core/pro_license.dart';
 import '../data/models/celda.dart';
 import '../data/models/celda_foto.dart';
 import '../data/models/cell_event.dart';
@@ -57,7 +58,22 @@ class CeldaController extends ChangeNotifier {
   DateTime? ultimoRespaldo;
 
   /// Nombre del taller: encabeza las etiquetas y los informes.
+  ///
+  /// Es una función **Pro**: sin licencia activa queda en null y los informes
+  /// salen igual, con la marca de CeldaPro.
   String? nombreTaller;
+
+  /// Código de licencia Pro guardado (null si no hay).
+  String? licencia;
+
+  /// Ruta del logo del taller (solo Pro).
+  String? logoTaller;
+
+  /// ¿Buscar actualizaciones sola al abrir la app?
+  bool updateAutomatico = true;
+
+  /// ¿Está activada la versión Pro? Se comprueba el código sin conexión.
+  bool get esPro => ProLicense.esCodigoValido(licencia);
 
   /// Días desde el último respaldo, o null si no hay ninguno.
   int? get diasSinRespaldo =>
@@ -78,6 +94,9 @@ class CeldaController extends ChangeNotifier {
     rejectReasons = await _prefs.loadRejectReasons();
     ultimoRespaldo = await _prefs.loadLastBackup();
     nombreTaller = await _prefs.loadTaller();
+    licencia = await _prefs.loadLicencia();
+    logoTaller = await _prefs.loadLogoTaller();
+    updateAutomatico = await _prefs.loadUpdateAutomatico();
     await refresh();
   }
 
@@ -209,6 +228,64 @@ class CeldaController extends ChangeNotifier {
       nota: nota,
     );
     await refresh();
+  }
+
+  // ---------- Acciones en bloque ----------
+
+  /// Cambia la etapa de varias celdas de una vez.
+  ///
+  /// Cada celda registra su propio evento: el cambio en masa no puede borrar
+  /// la trazabilidad, que es lo que hace auditable el taller. Se recarga el
+  /// inventario **una sola vez** al final en vez de por celda.
+  ///
+  /// Devuelve cuántas celdas cambiaron de verdad (las que ya estaban en esa
+  /// etapa se omiten, para no ensuciar el historial).
+  Future<int> cambiarEstadoEnBloque(
+    List<Celda> celdas,
+    CellState nuevo, {
+    String? nota,
+  }) async {
+    var cambiadas = 0;
+    for (final celda in celdas) {
+      if (celda.id == null || celda.estado == nuevo) continue;
+      await _celdas.update(celda.copyWith(estado: nuevo));
+      await _eventos.logStateChange(
+        celdaId: celda.id!,
+        from: celda.estado.name,
+        to: nuevo.name,
+        nota: nota ?? 'Cambio en bloque',
+      );
+      cambiadas++;
+    }
+    if (cambiadas > 0) await refresh();
+    return cambiadas;
+  }
+
+  /// Asigna (o borra, con null) la ubicación de varias celdas.
+  Future<int> asignarUbicacionEnBloque(
+    List<Celda> celdas,
+    String? ubicacion,
+  ) async {
+    final valor =
+        (ubicacion ?? '').trim().isEmpty ? null : ubicacion!.trim();
+    var cambiadas = 0;
+    for (final celda in celdas) {
+      if (celda.id == null || celda.ubicacion == valor) continue;
+      await _celdas.update(celda.copyWith(ubicacion: valor));
+      await _eventos.insert(
+        CellEvent(
+          celdaId: celda.id!,
+          tipo: EventType.edited,
+          fecha: DateTime.now(),
+          nota: valor == null
+              ? 'Ubicación quitada (en bloque)'
+              : 'Ubicación «$valor» (en bloque)',
+        ),
+      );
+      cambiadas++;
+    }
+    if (cambiadas > 0) await refresh();
+    return cambiadas;
   }
 
   /// Adjunta/reemplaza la foto de evidencia de una celda.
@@ -451,10 +528,55 @@ class CeldaController extends ChangeNotifier {
 
   // ---------- Ajustes ----------
 
-  /// Guarda el nombre del taller (encabeza etiquetas e informes).
+  /// Guarda el nombre del taller (encabeza etiquetas e informes). Solo Pro.
   Future<void> setNombreTaller(String? nombre) async {
     await _prefs.saveTaller(nombre);
     nombreTaller = await _prefs.loadTaller();
+    notifyListeners();
+  }
+
+  /// Activa la versión Pro con un código de licencia.
+  ///
+  /// Devuelve false si el código no es válido: en ese caso no se guarda nada.
+  Future<bool> activarPro(String codigo) async {
+    final limpio = ProLicense.normalizar(codigo);
+    if (!ProLicense.esCodigoValido(limpio)) return false;
+    await _prefs.saveLicencia(limpio);
+    licencia = limpio;
+    notifyListeners();
+    return true;
+  }
+
+  /// Desactiva la versión Pro.
+  ///
+  /// El nombre y el logo del taller se conservan por si vuelve a activarla,
+  /// pero dejan de utilizarse en los informes.
+  Future<void> desactivarPro() async {
+    await _prefs.saveLicencia(null);
+    licencia = null;
+    notifyListeners();
+  }
+
+  /// Guarda el logo del taller (versión Pro).
+  Future<void> setLogoTaller(String path) async {
+    await _photos.delete(logoTaller);
+    await _prefs.saveLogoTaller(path);
+    logoTaller = path;
+    notifyListeners();
+  }
+
+  /// Quita el logo del taller.
+  Future<void> quitarLogoTaller() async {
+    await _photos.delete(logoTaller);
+    await _prefs.saveLogoTaller(null);
+    logoTaller = null;
+    notifyListeners();
+  }
+
+  /// ¿Buscar actualizaciones sola al abrir la app?
+  Future<void> setUpdateAutomatico(bool activo) async {
+    await _prefs.saveUpdateAutomatico(activo);
+    updateAutomatico = activo;
     notifyListeners();
   }
 
