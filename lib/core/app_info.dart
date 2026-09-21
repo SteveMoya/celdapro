@@ -8,7 +8,7 @@ library;
 const String appName = 'CeldaPro';
 
 /// Versión visible (debe coincidir con `version:` en pubspec.yaml).
-const String appVersion = '0.7.0';
+const String appVersion = '0.8.0';
 
 /// Número de compilación (debe coincidir con el `+N` de pubspec.yaml).
 const int appBuild = 1;

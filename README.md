@@ -80,6 +80,24 @@ cp android/key.properties.example android/key.properties   # y rellénalo
 
 `android/key.properties` y los `.jks` **nunca** se suben al repositorio (están en `.gitignore`).
 
+#### Estado de la firma de CeldaPro
+
+El keystore real ya está creado y **el APK se firma con él** (verificado con `apksigner`):
+
+- Keystore: `~/.keystore/celdapro-upload.jks` · alias `celdapro` · RSA 4096 · válido hasta 2054
+- Huella SHA-256 del certificado:
+  `E2:DD:3D:D4:F8:F4:F7:3D:76:4F:4F:7A:CB:E5:43:93:54:B5:A8:AC:6F:99:AA:9D:BF:82:6D:13:2E:BC:AA:67`
+- Los 4 secretos de GitHub (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`)
+  ya están cargados en el repositorio, listos para el workflow de release.
+
+⚠️ **Si el keystore se pierde no se pueden publicar actualizaciones** que instalen encima de la app ya
+instalada: habría que pedir un reinicio de clave a Google o desinstalar y reinstalar. Guárdalo con copia
+de seguridad (gestor de contraseñas + disco externo).
+
+⚠️ **Cambiar la clave de firma rompe la actualización en sitio.** Android exige la misma firma para
+reemplazar una app: quien tenga una versión antigua (firmada con la clave de depuración) tiene que
+**desinstalarla** antes de instalar una firmada con esta clave.
+
 ### Publicar una versión
 
 Sube la versión en `pubspec.yaml` y en `lib/core/app_info.dart` (un test comprueba que coincidan),
