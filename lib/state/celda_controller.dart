@@ -191,6 +191,16 @@ class CeldaController extends ChangeNotifier {
 
   // ---------- Celdas ----------
 
+  /// Busca una celda por su código en la base, no en la lista cargada.
+  ///
+  /// El inventario está paginado: la celda escaneada puede estar más allá de
+  /// la primera tanda, o fuera del filtro activo. Buscarla en memoria daría
+  /// «no encontrada» y ofrecería dar de alta una celda que ya existe.
+  Future<Celda?> celdaPorCodigo(String codigo) => _celdas.byCodigo(codigo);
+
+  /// Todos los códigos del inventario, para proponer parecidos si el OCR falla.
+  Future<List<String>> todosLosCodigos() => _celdas.codigos();
+
   /// Sugiere el siguiente código interno (C-0001, C-0002…).
   Future<String> suggestCodigo() async {
     final existentes = (await _celdas.all()).map((c) => c.codigoInterno).toSet();

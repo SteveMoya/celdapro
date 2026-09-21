@@ -24,9 +24,15 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
 - 📜 **Trazabilidad**: cada cambio de estado y cada test queda registrado con fecha.
 - 📸 **Evidencia fotográfica** por celda.
 - 🖨️ **Etiquetas imprimibles**: cada celda se etiqueta con **código de barras** (identificador),
-  **QR** (ficha completa) y los datos en texto. Tres tamaños, en PDF listo para imprimir o compartir.
+  **QR** (ficha completa) y los datos en texto. Cuatro tamaños, en PDF listo para imprimir o
+  compartir, incluida una **tira de una línea** (50 × 12 mm) para pegar en cada celda con el código
+  en grande.
 - 📷 **Escaneo**: al leer una etiqueta abre la celda; si no existe en el teléfono, da de alta una
   nueva con los datos que traía la etiqueta.
+- 🔤 **Lectura por OCR**: para la etiqueta de una línea, la app hace una foto y lee el código con el
+  reconocimiento de texto del teléfono, **sin conexión** (el modelo va dentro de la app). Corrige las
+  confusiones típicas del OCR (`O`↔`0`, `I`↔`1`, `S`↔`5`…) y, si no acierta, enseña lo que leyó,
+  propone los códigos más parecidos y permite escribirlo a mano.
 - 🛡️ **Respaldo y restauración**: base de datos, fotos y ajustes en un solo archivo `.celdapro`,
   con vista previa antes de restaurar y copia de seguridad previa automática.
 - 🧪 **Test masivo**: registra las mediciones de un lote entero en serie, sin volver al inventario.
@@ -52,8 +58,12 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
 
 ## 🔒 Privacidad
 
-Toda la información (celdas, tests, fotos) se guarda **solo en el teléfono**. La app no envía
-datos a ningún servidor y no requiere cuenta. No pide permiso de internet para funcionar.
+Toda la información (celdas, tests, fotos) se guarda **solo en el teléfono**. La app no envía tus
+datos a ningún servidor y no requiere cuenta.
+
+Lo único que sale a internet es la **búsqueda de actualizaciones** (consulta la lista de versiones
+publicadas en GitHub) y se puede desactivar en Ajustes. El **reconocimiento de texto del OCR se
+ejecuta en el propio teléfono**, con el modelo incluido en la app: las fotos no salen de él.
 
 ## 📱 Requisitos
 

@@ -55,6 +55,8 @@ android {
                 // probar la app. NO sirve para publicar en Google Play.
                 signingConfigs.getByName("debug")
             }
+            // Las reglas de R8 van en android/app/proguard-rules.pro, que el
+            // plugin de Flutter añade solo a este tipo de compilación.
         }
     }
 }

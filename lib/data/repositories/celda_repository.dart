@@ -123,6 +123,37 @@ class CeldaRepository {
     return rows.isNotEmpty;
   }
 
+  /// Busca una celda por su código interno, sin distinguir mayúsculas.
+  ///
+  /// Va contra la base a propósito: con el inventario paginado, la celda
+  /// escaneada puede no estar entre las que hay cargadas en memoria.
+  Future<Celda?> byCodigo(String codigo) async {
+    final limpio = codigo.trim();
+    if (limpio.isEmpty) return null;
+    final db = await _db.database;
+    final rows = await db.query(
+      DatabaseHelper.tableCeldas,
+      where: 'codigo_interno COLLATE NOCASE = ?',
+      whereArgs: [limpio],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : Celda.fromMap(rows.first);
+  }
+
+  /// Solo los códigos internos del inventario.
+  ///
+  /// Se usa para proponer códigos parecidos cuando el OCR lee mal: trae una
+  /// columna en vez de las celdas enteras.
+  Future<List<String>> codigos() async {
+    final db = await _db.database;
+    final rows = await db.query(
+      DatabaseHelper.tableCeldas,
+      columns: ['codigo_interno'],
+      orderBy: 'codigo_interno ASC',
+    );
+    return rows.map((r) => r['codigo_interno'] as String).toList();
+  }
+
   Future<List<Celda>> all({
     CeldaFilter filter = const CeldaFilter(),
     String orderBy = 'codigo_interno ASC',

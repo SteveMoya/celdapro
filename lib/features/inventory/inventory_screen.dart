@@ -14,6 +14,7 @@ import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
 import 'celda_detail_screen.dart';
 import 'celda_form_screen.dart';
+import 'ocr_scanner_screen.dart';
 import 'scanner_screen.dart';
 
 /// Pantalla 2: inventario de celdas con búsqueda y filtros.
@@ -212,6 +213,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton.small(
+            heroTag: 'ocr',
+            tooltip: 'Leer el código con OCR',
+            onPressed: () => _scanOcr(context),
+            child: const Icon(Icons.document_scanner_outlined),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.small(
             heroTag: 'scan',
             tooltip: 'Escanear código',
             onPressed: () => _scan(context),
@@ -301,16 +309,35 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ? payload!.codigo
         : scan.trim();
 
-    final controller = context.read<CeldaController>();
-    Celda? existente;
-    for (final c in controller.celdas) {
-      if (c.codigoInterno.toLowerCase() == codigo.toLowerCase()) {
-        existente = c;
-        break;
-      }
-    }
+    await _abrirPorCodigo(context, codigo, payload: payload);
+  }
 
-    if (existente != null && existente.id != null) {
+  /// Lee el código de la etiqueta de una línea con OCR.
+  Future<void> _scanOcr(BuildContext context) async {
+    final codigo = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const OcrScannerScreen()),
+    );
+    if (codigo == null || !context.mounted) return;
+    await _abrirPorCodigo(context, codigo);
+  }
+
+  /// Abre la ficha de la celda con ese código; si no existe, ofrece darla de
+  /// alta con los datos que traía la etiqueta.
+  ///
+  /// La busca **en la base** y no en [CeldaController.celdas]: la lista del
+  /// inventario está paginada y además puede tener un filtro puesto, así que la
+  /// celda escaneada puede no estar cargada en memoria. Buscándola solo ahí, la
+  /// daríamos por inexistente y ofreceríamos crear un duplicado.
+  Future<void> _abrirPorCodigo(
+    BuildContext context,
+    String codigo, {
+    CellPayload? payload,
+  }) async {
+    final controller = context.read<CeldaController>();
+    final existente = await controller.celdaPorCodigo(codigo);
+    if (!context.mounted) return;
+
+    if (existente?.id != null) {
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
           builder: (_) => CeldaDetailScreen(celdaId: existente!.id!),

@@ -635,6 +635,36 @@ void main() {
       expect(await celdas.contar(), 250);
     });
 
+    test('byCodigo encuentra una celda que no está en la primera página',
+        () async {
+      await sembrar(250);
+
+      // La página trae 100 celdas, así que la 250 no está entre ellas.
+      final primera = await celdas.pagina(limite: 100);
+      expect(primera.map((c) => c.codigoInterno), isNot(contains('C-00250')));
+
+      // Aun así se encuentra, porque la búsqueda va contra la base y no contra
+      // la página cargada en memoria. Es lo que usan el escáner y el OCR: si
+      // buscaran solo en la lista, darían por inexistente una celda que existe
+      // y ofrecerían crear un duplicado.
+      final hallada = await celdas.byCodigo('C-00250');
+      expect(hallada, isNotNull);
+      expect(hallada!.codigoInterno, 'C-00250');
+    });
+
+    test('byCodigo no distingue mayúsculas de minúsculas', () async {
+      await sembrar(5);
+      // El OCR puede devolver el código en minúsculas.
+      expect((await celdas.byCodigo('c-00001'))?.codigoInterno, 'C-00001');
+    });
+
+    test('byCodigo devuelve null si el código no existe o está vacío',
+        () async {
+      await sembrar(5);
+      expect(await celdas.byCodigo('C-99999'), isNull);
+      expect(await celdas.byCodigo('   '), isNull);
+    });
+
     test('las páginas no repiten ni se saltan celdas', () async {
       await sembrar(250);
 

@@ -36,6 +36,7 @@ void main() {
     expect(LabelFormat.celda.porHoja, 24);
     expect(LabelFormat.estandar.porHoja, 21);
     expect(LabelFormat.caja.porHoja, 14);
+    expect(LabelFormat.unaLinea.porHoja, 60);
 
     // Las etiquetas no pueden ser más anchas que la caja de impresión de una
     // A4 con márgenes de 6 mm por lado (198 mm útiles).
@@ -100,6 +101,30 @@ void main() {
       expect(String.fromCharCodes(bytes.take(5)), '%PDF-',
           reason: '${f.label} no generó un PDF válido');
     }
+  });
+
+  test('la etiqueta de una línea imprime el código como texto', () async {
+    // Es la etiqueta que lee el OCR: el código tiene que ir como texto real,
+    // no como imagen, o el reconocimiento no tendría nada que leer.
+    final bytes = await service.buildSheet(
+      celdas: [celda(1)],
+      lotesById: {1: lote},
+      formato: LabelFormat.unaLinea,
+    );
+    expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    await File('/tmp/celdapro-etiqueta-una-linea.pdf').writeAsBytes(bytes);
+  });
+
+  test('un código largo del taller se encoge y no rompe la línea', () async {
+    // 'SAMSUNG-A12' es más largo que 'C-0001': debe encajar igualmente.
+    final bytes = await service.buildSheet(
+      celdas: [
+        Celda(codigoInterno: 'SAMSUNG-A12', createdAt: DateTime(2026, 9, 20)),
+      ],
+      formato: LabelFormat.unaLinea,
+    );
+    expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    await File('/tmp/celdapro-etiqueta-larga.pdf').writeAsBytes(bytes);
   });
 
   test('una celda sin datos técnicos tampoco rompe la etiqueta', () async {
