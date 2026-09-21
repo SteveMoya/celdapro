@@ -2,8 +2,38 @@ import 'dart:convert';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../core/agrupacion.dart';
 import '../core/classification.dart';
 import 'database_helper.dart';
+import 'repositories/celda_repository.dart';
+
+/// Un filtro del inventario guardado con nombre, para volver a aplicarlo.
+class FiltroGuardado {
+  const FiltroGuardado({required this.nombre, required this.filtro});
+
+  final String nombre;
+  final CeldaFilter filtro;
+
+  Map<String, Object?> toMap() => {
+        'nombre': nombre,
+        'filtro': filtro.toMap(),
+      };
+
+  /// Reconstruye un filtro guardado, o null si el registro está corrupto.
+  static FiltroGuardado? fromMap(Map<String, Object?> map) {
+    final nombre = map['nombre'];
+    final filtro = map['filtro'];
+    if (nombre is! String || nombre.trim().isEmpty) return null;
+    if (filtro is! Map) return null;
+    return FiltroGuardado(
+      nombre: nombre.trim(),
+      filtro: CeldaFilter.fromMap(Map<String, Object?>.from(filtro)),
+    );
+  }
+}
+
+/// Máximo de filtros guardados: es una lista de atajos, no un archivo.
+const maxFiltrosGuardados = 20;
 
 /// Preferencias locales de la app (umbrales, motivos de rechazo).
 class PreferencesStore {
@@ -20,6 +50,8 @@ class PreferencesStore {
   static const _logoKey = 'logo_taller';
   static const _updateAvisadaKey = 'update_ultima_avisada';
   static const _updateAutoKey = 'update_automatico';
+  static const _toleranciasKey = 'tolerancias_agrupacion';
+  static const _filtrosKey = 'filtros_guardados';
 
   static const defaultRejectReasons = <String>[
     'Capacidad baja',
@@ -134,4 +166,51 @@ class PreferencesStore {
 
   Future<void> saveUpdateAutomatico(bool activo) =>
       _set(_updateAutoKey, activo ? '1' : '0');
+
+  // ---------- Agrupación ----------
+
+  /// Tolerancias con las que se agrupan las celdas.
+  Future<ToleranciasAgrupacion> loadTolerancias() async {
+    final raw = await _get(_toleranciasKey);
+    if (raw == null || raw.isEmpty) return const ToleranciasAgrupacion();
+    try {
+      final mapa = jsonDecode(raw);
+      if (mapa is! Map) return const ToleranciasAgrupacion();
+      return ToleranciasAgrupacion.fromMap(Map<String, Object?>.from(mapa));
+    } catch (_) {
+      return const ToleranciasAgrupacion();
+    }
+  }
+
+  Future<void> saveTolerancias(ToleranciasAgrupacion t) =>
+      _set(_toleranciasKey, jsonEncode(t.sanitized().toMap()));
+
+  // ---------- Filtros guardados ----------
+
+  /// Filtros del inventario guardados con nombre.
+  ///
+  /// Si el registro guardado está corrupto se devuelve una lista vacía: es
+  /// preferible perder los atajos a que la pantalla no abra.
+  Future<List<FiltroGuardado>> loadFiltrosGuardados() async {
+    final raw = await _get(_filtrosKey);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final lista = jsonDecode(raw);
+      if (lista is! List) return const [];
+      return lista
+          .whereType<Map>()
+          .map((m) => FiltroGuardado.fromMap(Map<String, Object?>.from(m)))
+          .whereType<FiltroGuardado>()
+          .toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveFiltrosGuardados(List<FiltroGuardado> filtros) => _set(
+        _filtrosKey,
+        jsonEncode(
+          filtros.take(maxFiltrosGuardados).map((f) => f.toMap()).toList(),
+        ),
+      );
 }

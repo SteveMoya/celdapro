@@ -56,4 +56,25 @@ class CellTestRepository {
     );
     return (rows.first['n'] as int?) ?? 0;
   }
+
+  /// El último test de **cada** celda, en una sola consulta.
+  ///
+  /// La agrupación necesita la medición más reciente de muchas celdas a la vez.
+  /// Pedirlas una por una serían cientos de consultas; así se resuelve en una.
+  /// El desempate por `id` es para que, si dos tests comparten fecha, gane
+  /// siempre el mismo (el último registrado) y el resultado no baile.
+  Future<Map<int, CellTest>> ultimosPorCelda() async {
+    final db = await _db.database;
+    final rows = await db.rawQuery(
+      'SELECT t.* FROM ${DatabaseHelper.tableTests} t '
+      'WHERE t.id = ('
+      '  SELECT t2.id FROM ${DatabaseHelper.tableTests} t2 '
+      '  WHERE t2.celda_id = t.celda_id '
+      '  ORDER BY t2.fecha DESC, t2.id DESC LIMIT 1'
+      ')',
+    );
+    return {
+      for (final r in rows) (r['celda_id'] as int): CellTest.fromMap(r),
+    };
+  }
 }

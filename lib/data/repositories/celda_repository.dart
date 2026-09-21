@@ -42,6 +42,51 @@ class CeldaFilter {
   bool get tieneRangos =>
       sohMin != null || sohMax != null || capacidadMin != null || capacidadMax != null;
 
+  /// Convierte el filtro a algo guardable (para los filtros favoritos).
+  Map<String, Object?> toMap() => {
+        'texto': texto,
+        'estado': estado?.name,
+        'veredicto': veredicto?.name,
+        'loteId': loteId,
+        'sohMin': sohMin,
+        'sohMax': sohMax,
+        'capacidadMin': capacidadMin,
+        'capacidadMax': capacidadMax,
+      };
+
+  /// Reconstruye un filtro guardado.
+  ///
+  /// Tolera que falten campos o que traigan valores que ya no existen (por
+  /// ejemplo, un veredicto de una versión vieja): en ese caso se ignora ese
+  /// campo en vez de dejar el filtro inservible.
+  factory CeldaFilter.fromMap(Map<String, Object?> map) {
+    double? aDouble(Object? v) => v is num ? v.toDouble() : null;
+    CellState? estado;
+    if (map['estado'] is String) {
+      final nombre = map['estado'] as String;
+      for (final e in CellState.values) {
+        if (e.name == nombre) estado = e;
+      }
+    }
+    Verdict? veredicto;
+    if (map['veredicto'] is String) {
+      final nombre = map['veredicto'] as String;
+      for (final v in Verdict.values) {
+        if (v.name == nombre) veredicto = v;
+      }
+    }
+    return CeldaFilter(
+      texto: map['texto'] is String ? map['texto'] as String : null,
+      estado: estado,
+      veredicto: veredicto,
+      loteId: map['loteId'] is num ? (map['loteId'] as num).toInt() : null,
+      sohMin: aDouble(map['sohMin']),
+      sohMax: aDouble(map['sohMax']),
+      capacidadMin: aDouble(map['capacidadMin']),
+      capacidadMax: aDouble(map['capacidadMax']),
+    );
+  }
+
   CeldaFilter copyWith({
     String? texto,
     CellState? estado,

@@ -5,6 +5,7 @@ import '../../core/cell_code.dart';
 import '../../core/classification.dart';
 import '../../data/models/celda.dart';
 import '../../data/repositories/celda_repository.dart';
+import '../../data/preferences_store.dart';
 import '../../state/celda_controller.dart';
 import '../labels/label_screen.dart';
 import '../reports/report_screen.dart';
@@ -56,14 +57,97 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  /// Aplica lo que hay en la barra de búsqueda y los chips.
+  ///
+  /// Se conservan las partes «avanzadas» del filtro que no están en la
+  /// pantalla (rango de SoH y de capacidad, lote): si no, aplicar un filtro
+  /// guardado con rangos y luego tocar la búsqueda los borraría en silencio.
   void _apply() {
+    final actual = context.read<CeldaController>().filter;
     context.read<CeldaController>().setFilter(
           CeldaFilter(
             texto: _searchCtrl.text,
             estado: _estado,
             veredicto: _veredicto,
+            loteId: actual.loteId,
+            sohMin: actual.sohMin,
+            sohMax: actual.sohMax,
+            capacidadMin: actual.capacidadMin,
+            capacidadMax: actual.capacidadMax,
           ),
         );
+  }
+
+  /// Aplica un filtro guardado y pone la pantalla en consonancia.
+  Future<void> _aplicarFiltro(FiltroGuardado f) async {
+    setState(() {
+      _searchCtrl.text = f.filtro.texto ?? '';
+      _estado = f.filtro.estado;
+      _veredicto = f.filtro.veredicto;
+    });
+    await context.read<CeldaController>().aplicarFiltroGuardado(f);
+  }
+
+  /// Guarda el filtro actual con un nombre.
+  ///
+  /// Si no hay ningún filtro puesto no se guarda nada: un atajo a «todo» no
+  /// aporta y solo llena la lista.
+  Future<void> _guardarFiltro() async {
+    final actual = context.read<CeldaController>().filter;
+    if (actual.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pon primero algún filtro y luego guárdalo.'),
+        ),
+      );
+      return;
+    }
+
+    final ctrl = TextEditingController(
+      text: _sugerenciaNombre(actual),
+    );
+    final nombre = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Guardar filtro'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'Nombre del filtro',
+            hintText: 'Samsung 25R pendientes',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(ctrl.text),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+
+    if (nombre == null || nombre.trim().isEmpty || !mounted) return;
+    await context.read<CeldaController>().guardarFiltroActual(nombre);
+  }
+
+  /// Propone un nombre a partir del filtro puesto, para no escribirlo entero.
+  String _sugerenciaNombre(CeldaFilter f) {
+    final partes = <String>[
+      if (f.texto != null && f.texto!.trim().isNotEmpty) f.texto!.trim(),
+      if (f.veredicto != null) 'veredicto ${f.veredicto!.code}',
+      if (f.estado != null) f.estado!.label,
+      if (f.tieneRangos) 'con rango',
+    ];
+    return partes.isEmpty ? '' : partes.join(' · ');
   }
 
   bool get _hasFilter =>
@@ -144,6 +228,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ],
             ),
           ),
+
+          // Filtros guardados: atajos con nombre, para no rearmar el filtro
+          // cada vez que se vuelve al inventario.
+          if (c.filtrosGuardados.isNotEmpty || _hasFilter)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  if (_hasFilter)
+                    ActionChip(
+                      avatar: const Icon(Icons.bookmark_add_outlined, size: 16),
+                      label: const Text('Guardar filtro'),
+                      onPressed: _guardarFiltro,
+                    ),
+                  if (_hasFilter && c.filtrosGuardados.isNotEmpty)
+                    const SizedBox(width: 10),
+                  if (c.filtrosGuardados.isNotEmpty)
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final f in c.filtrosGuardados) ...[
+                              InputChip(
+                                label: Text(f.nombre),
+                                onPressed: () => _aplicarFiltro(f),
+                                onDeleted: () => context
+                                    .read<CeldaController>()
+                                    .borrarFiltroGuardado(f.nombre),
+                                deleteIcon: const Icon(Icons.close, size: 15),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           const SizedBox(height: 4),
 
           // Aviso de celdas pendientes: el atajo al registro en serie.

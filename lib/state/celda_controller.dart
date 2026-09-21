@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/agrupacion.dart';
 import '../core/classification.dart';
 import '../core/pro_license.dart';
 import '../data/models/celda.dart';
@@ -90,6 +91,12 @@ class CeldaController extends ChangeNotifier {
   /// ¿Buscar actualizaciones sola al abrir la app?
   bool updateAutomatico = true;
 
+  /// Tolerancias con las que se agrupan las celdas para armar packs.
+  ToleranciasAgrupacion tolerancias = const ToleranciasAgrupacion();
+
+  /// Filtros del inventario guardados con nombre (atajos).
+  List<FiltroGuardado> filtrosGuardados = const [];
+
   /// ¿Está activada la versión Pro? Se comprueba el código sin conexión.
   bool get esPro => ProLicense.esCodigoValido(licencia);
 
@@ -115,6 +122,8 @@ class CeldaController extends ChangeNotifier {
     licencia = await _prefs.loadLicencia();
     logoTaller = await _prefs.loadLogoTaller();
     updateAutomatico = await _prefs.loadUpdateAutomatico();
+    tolerancias = await _prefs.loadTolerancias();
+    filtrosGuardados = await _prefs.loadFiltrosGuardados();
     await refresh();
   }
 
@@ -170,6 +179,61 @@ class CeldaController extends ChangeNotifier {
   Future<void> setFilter(CeldaFilter f) async {
     filter = f;
     await refresh();
+  }
+
+  // ---------- Filtros guardados ----------
+
+  /// Guarda el filtro activo con un nombre, para volver a aplicarlo luego.
+  ///
+  /// Si ya había uno con ese nombre se reemplaza: el taller espera que
+  /// «Samsung 25R» sea uno, no que se vayan acumulando repetidos.
+  Future<void> guardarFiltroActual(String nombre) async {
+    final n = nombre.trim();
+    if (n.isEmpty) return;
+
+    final lista = [...filtrosGuardados]
+      ..removeWhere((f) => f.nombre.toLowerCase() == n.toLowerCase());
+    lista.insert(0, FiltroGuardado(nombre: n, filtro: filter));
+
+    filtrosGuardados =
+        lista.take(maxFiltrosGuardados).toList(growable: false);
+    await _prefs.saveFiltrosGuardados(filtrosGuardados);
+    notifyListeners();
+  }
+
+  Future<void> borrarFiltroGuardado(String nombre) async {
+    filtrosGuardados = filtrosGuardados
+        .where((f) => f.nombre != nombre)
+        .toList(growable: false);
+    await _prefs.saveFiltrosGuardados(filtrosGuardados);
+    notifyListeners();
+  }
+
+  /// Aplica un filtro guardado y recarga el inventario.
+  Future<void> aplicarFiltroGuardado(FiltroGuardado f) => setFilter(f.filtro);
+
+  // ---------- Agrupación ----------
+
+  /// Cambia las tolerancias de agrupación y las deja guardadas.
+  Future<void> setTolerancias(ToleranciasAgrupacion t) async {
+    tolerancias = t.sanitized();
+    await _prefs.saveTolerancias(tolerancias);
+    notifyListeners();
+  }
+
+  /// Agrupa por similitud las celdas que cumplen [filtro].
+  ///
+  /// Trae **todas** las celdas que cumplen el filtro (no solo la página
+  /// cargada): agrupar sobre una parte daría grupos incompletos. Usa el último
+  /// test de cada celda, en una sola consulta.
+  Future<ResultadoAgrupacion> agruparCeldas({CeldaFilter? filtro}) async {
+    final lista = await _celdas.all(filter: filtro ?? filter);
+    final ultimos = await _tests.ultimosPorCelda();
+    final medidas = [
+      for (final c in lista)
+        CeldaMedida.de(c, c.id == null ? null : ultimos[c.id!]),
+    ];
+    return agruparConMotivos(celdas: medidas, tolerancias: tolerancias);
   }
 
   // ---------- Métricas ----------

@@ -150,6 +150,44 @@ error más caro del taller y hoy se evita «a ojo».
 Lo único que quedó pendiente de M5. Guardar combinaciones de filtros con nombre («Samsung 25R
 pendientes»). Pequeño; lo meto con F1 en vez de hacer una versión por esto.
 
+### 🧩 F1 — Agrupación y balanceo de celdas ✅ Hecho en v0.10.0
+
+**Por qué:** un pack que mezcla una celda al 95 % con otra al 62 % se degrada por la peor. Es el
+error más caro del taller y hoy se evita «a ojo».
+
+- ✅ **Lógica pura** (`lib/core/agrupacion.dart`): `ToleranciasAgrupacion`, `CeldaMedida`,
+  `GrupoCompatibles`, `agrupar()` y `agruparConMotivos()`.
+- ✅ **Criterios con la medición real** de cada celda (no el dato del catálogo):
+  química (idéntica, no negociable), capacidad medida, RI medida, SoH y voltaje.
+- ✅ **Tolerancias configurables** con valores por defecto de la app
+  (capacidad ±5 %, RI ±10 %, SoH ±5 puntos, voltaje ±0,05 V), guardadas en preferencias.
+- ✅ **La garantía:** cada candidata se compara contra **todos** los miembros del grupo, así que
+  dentro de un grupo dos celdas cualesquiera no se separan más que la tolerancia. Hay un test que
+  lo comprueba exhaustivamente (60 celdas, todos los pares).
+- ✅ **La pantalla dice por qué deja fuera a cada celda**, agrupado por motivo (sin medición,
+  rechazada, descartada, ya empacada…). Sin eso el operador no se fía del resultado.
+- ✅ **Capacidad aprovechable del pack** calculada por la celda más débil, no por la media.
+- ✅ **Resultado determinista**: el orden de entrada no cambia lo que sale (con test).
+- ✅ **Rápido a escala**: poda por capacidad; 5 000 celdas se agrupan en menos de 3 s (con test).
+- ✅ **Una consulta** para las últimas mediciones de todas las celdas (`ultimosPorCelda`), no una
+  por celda.
+- ✅ **Dos entradas**: desde el inventario (agrupa lo que cumpla el filtro activo) y desde un lote
+  (solo las celdas de ese lote).
+- **Aceptación cumplida:** 20 celdas → dos bloques limpios (12 y 8) sin mezclar; una celda de 62 %
+  de SoH **nunca** cae con otras de 95 % salvo que se ensanche la tolerancia a mano; una celda de
+  química distinta no entra en ningún caso.
+
+### 🔖 F4 — Filtros guardados ✅ Hecho en v0.10.0
+
+Lo que quedó pendiente de M5. Se guarda el filtro activo con un nombre y se vuelve a aplicar con un
+toque; se puede borrar. Tope de 20 para que la lista siga siendo útil.
+
+- ✅ `CeldaFilter.toMap/fromMap` (tolera valores corruptos o de versiones viejas).
+- ✅ `FiltroGuardado` en `preferences_store.dart`, persistido en preferencias.
+- ✅ Chips en el inventario para aplicar y borrar, y botón «Guardar filtro» con nombre sugerido.
+- 🐛 **Fallo corregido de paso:** al tocar la búsqueda, el inventario reconstruía el filtro desde
+  cero y **perdía en silencio** el rango de SoH/capacidad y el lote. Ahora esas partes se conservan.
+
 ---
 
 ## 4. Cómo lo entrego
@@ -159,7 +197,7 @@ Una versión por entregable, con su release firmada y probada:
 | Versión | Contenido |
 |---|---|
 | **v0.9.0** ✅ | F0: etiqueta de una línea + lectura por OCR |
-| **v0.10.0** | F1 agrupación y balanceo + F4 filtros guardados |
+| **v0.10.0** ✅ | F1 agrupación y balanceo + F4 filtros guardados |
 | **v0.11.0** | F2 armado de packs |
 | **v0.12.0** | F3 análisis de degradación |
 

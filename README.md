@@ -52,8 +52,16 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
   para entregárselos al cliente.
 - 📊 **Dashboard** con celdas procesadas, % rechazo, SoH promedio y actividad reciente.
 - 📤 **Exportar CSV** e **importar inventario** existente.
+- 🧩 **Agrupación para packs**: la app dice qué celdas se parecen lo suficiente para ir juntas en un
+  pack, comparando la **medición real** de cada una (capacidad, resistencia interna, SoH y voltaje),
+  nunca el dato del catálogo. La química tiene que ser idéntica. Dentro de un grupo, dos celdas
+  cualesquiera no se separan más que la tolerancia que pongas (por defecto ±5 % de capacidad, ±10 %
+  de RI, ±5 puntos de SoH y ±0,05 V), y la pantalla **explica por qué deja fuera a cada celda**.
+  Calcula la capacidad aprovechable del pack por la celda más débil, no por la media.
 - ⚡ **Ágil con miles de celdas**: el inventario carga por tandas al bajar por la lista, y permite
   filtrar por rango de SoH y de capacidad además de por texto, etapa, veredicto y lote.
+- 🔖 **Filtros guardados**: guarda con un nombre la combinación de filtros que uses a menudo
+  («Samsung 25R pendientes») y vuelve a aplicarla con un toque.
 - 🎨 **Marca propia**: logo, icono y guía de marca en `brand/` (ver [BRAND.md](brand/BRAND.md)).
 
 ## 🔒 Privacidad

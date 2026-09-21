@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/celda.dart';
 import '../../data/models/lote.dart';
+import '../../data/repositories/celda_repository.dart';
 import '../../state/celda_controller.dart';
+import '../packs/agrupacion_screen.dart';
 import '../widgets/state_chip.dart';
 import '../widgets/verdict_chip.dart';
 
@@ -42,6 +44,19 @@ class _LoteCeldasScreenState extends State<LoteCeldasScreen> {
       appBar: AppBar(
         title: Text(widget.lote.codigo),
         actions: [
+          IconButton(
+            tooltip: 'Agrupar las celdas del lote para packs',
+            icon: const Icon(Icons.grid_view_rounded),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => AgrupacionScreen(
+                  filtro: CeldaFilter(loteId: widget.lote.id),
+                  titulo: 'Agrupar el lote',
+                  descripcion: 'Lote ${widget.lote.codigo}',
+                ),
+              ),
+            ),
+          ),
           if (celdas.isNotEmpty)
             TextButton(
               onPressed: _ocupado

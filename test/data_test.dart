@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:celdapro/core/agrupacion.dart';
 import 'package:celdapro/core/classification.dart';
 import 'package:celdapro/data/database_helper.dart';
 import 'package:celdapro/data/models/celda.dart';
@@ -997,6 +998,203 @@ void main() {
       DatabaseHelper.baseDePruebas = null;
       await migrada.close();
       File(ruta).deleteSync();
+    });
+  });
+
+  group('Última medición de cada celda (para la agrupación)', () {
+    test('devuelve la medición más reciente de cada celda', () async {
+      final id = await celdas.insert(celdaDePrueba(codigo: 'C-0001'));
+
+      // Tres mediciones de la misma celda, en orden.
+      await tests.insert(CellTest(
+        celdaId: id,
+        fecha: DateTime(2026, 9, 1),
+        capacidadMedidaMah: 2000,
+      ));
+      await tests.insert(CellTest(
+        celdaId: id,
+        fecha: DateTime(2026, 9, 10),
+        capacidadMedidaMah: 2300,
+      ));
+      await tests.insert(CellTest(
+        celdaId: id,
+        fecha: DateTime(2026, 9, 5),
+        capacidadMedidaMah: 2100,
+      ));
+
+      final ultimos = await tests.ultimosPorCelda();
+
+      expect(ultimos, hasLength(1));
+      expect(ultimos[id]!.capacidadMedidaMah, 2300);
+    });
+
+    test('con dos mediciones el mismo día gana la registrada después',
+        () async {
+      // Si empatan en fecha, el resultado tiene que ser siempre el mismo: el
+      // que se registró después. Si no, la agrupación podría cambiar entre
+      // dos ejecuciones con los mismos datos.
+      final id = await celdas.insert(celdaDePrueba(codigo: 'C-0001'));
+      final fecha = DateTime(2026, 9, 10);
+
+      await tests.insert(
+          CellTest(celdaId: id, fecha: fecha, capacidadMedidaMah: 2000));
+      await tests.insert(
+          CellTest(celdaId: id, fecha: fecha, capacidadMedidaMah: 2400));
+
+      final ultimos = await tests.ultimosPorCelda();
+      expect(ultimos[id]!.capacidadMedidaMah, 2400);
+    });
+
+    test('trae la de cada celda, no solo una', () async {
+      final a = await celdas.insert(celdaDePrueba(codigo: 'C-0001'));
+      final b = await celdas.insert(celdaDePrueba(codigo: 'C-0002'));
+
+      await tests.insert(CellTest(
+          celdaId: a, fecha: DateTime(2026, 9, 1), capacidadMedidaMah: 2000));
+      await tests.insert(CellTest(
+          celdaId: b, fecha: DateTime(2026, 9, 2), capacidadMedidaMah: 2400));
+
+      final ultimos = await tests.ultimosPorCelda();
+      expect(ultimos, hasLength(2));
+      expect(ultimos[a]!.capacidadMedidaMah, 2000);
+      expect(ultimos[b]!.capacidadMedidaMah, 2400);
+    });
+
+    test('una celda sin mediciones no aparece', () async {
+      await celdas.insert(celdaDePrueba(codigo: 'C-0001'));
+      expect(await tests.ultimosPorCelda(), isEmpty);
+    });
+  });
+
+  group('Filtros guardados y tolerancias', () {
+    test('el filtro se guarda y se lee igual', () {
+      const original = CeldaFilter(
+        texto: 'Samsung 25R',
+        estado: CellState.testing,
+        veredicto: Verdict.a,
+        loteId: 7,
+        sohMin: 80,
+        sohMax: 100,
+        capacidadMin: 2000,
+        capacidadMax: 2600,
+      );
+
+      final copia = CeldaFilter.fromMap(original.toMap());
+
+      expect(copia.texto, 'Samsung 25R');
+      expect(copia.estado, CellState.testing);
+      expect(copia.veredicto, Verdict.a);
+      expect(copia.loteId, 7);
+      expect(copia.sohMin, 80);
+      expect(copia.sohMax, 100);
+      expect(copia.capacidadMin, 2000);
+      expect(copia.capacidadMax, 2600);
+    });
+
+    test('un filtro con basura no revienta y conserva lo legible', () {
+      // Un veredicto que ya no existe y números como texto: lo que se puede
+      // leer se conserva, lo demás se ignora.
+      final f = CeldaFilter.fromMap({
+        'texto': 'LG',
+        'estado': 'inventado',
+        'veredicto': 'inventado',
+        'loteId': 'siete',
+        'sohMin': 'ochenta',
+        'sohMax': 95,
+      });
+
+      expect(f.texto, 'LG');
+      expect(f.estado, isNull);
+      expect(f.veredicto, isNull);
+      expect(f.loteId, isNull);
+      expect(f.sohMin, isNull);
+      expect(f.sohMax, 95);
+    });
+
+    test('un filtro vacío sigue siendo vacío tras guardarlo', () {
+      expect(CeldaFilter.fromMap(const CeldaFilter().toMap()).isEmpty, isTrue);
+    });
+
+    test('los filtros guardados se conservan con su nombre', () async {
+      await prefs.saveFiltrosGuardados([
+        const FiltroGuardado(
+          nombre: 'Pendientes de test',
+          filtro: CeldaFilter(estado: CellState.testing),
+        ),
+        const FiltroGuardado(
+          nombre: 'Buenas Samsung',
+          filtro: CeldaFilter(texto: 'Samsung', veredicto: Verdict.a),
+        ),
+      ]);
+
+      final leidos = await prefs.loadFiltrosGuardados();
+
+      expect(leidos, hasLength(2));
+      expect(leidos.first.nombre, 'Pendientes de test');
+      expect(leidos.first.filtro.estado, CellState.testing);
+      expect(leidos[1].nombre, 'Buenas Samsung');
+      expect(leidos[1].filtro.texto, 'Samsung');
+      expect(leidos[1].filtro.veredicto, Verdict.a);
+    });
+
+    test('sin nada guardado devuelve una lista vacía, no un error', () async {
+      expect(await prefs.loadFiltrosGuardados(), isEmpty);
+    });
+
+    test('un registro corrupto no tumba la lista entera', () async {
+      // Se escribe basura directamente en la preferencia.
+      await prefs.saveFiltrosGuardados([
+        const FiltroGuardado(
+          nombre: 'Válido',
+          filtro: CeldaFilter(texto: 'LG'),
+        ),
+      ]);
+      final db2 = await DatabaseHelper.instance.database;
+      await db2.insert(
+        DatabaseHelper.tablePrefs,
+        {'key': 'filtros_guardados', 'value': 'esto no es JSON {{{'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      expect(await prefs.loadFiltrosGuardados(), isEmpty);
+    });
+
+    test('se respeta el máximo de filtros guardados', () async {
+      final muchos = [
+        for (var i = 0; i < maxFiltrosGuardados + 10; i++)
+          FiltroGuardado(
+            nombre: 'Filtro $i',
+            filtro: const CeldaFilter(texto: 'x'),
+          ),
+      ];
+      await prefs.saveFiltrosGuardados(muchos);
+      expect((await prefs.loadFiltrosGuardados()).length, maxFiltrosGuardados);
+    });
+
+    test('las tolerancias de agrupación se guardan y se leen', () async {
+      const t = ToleranciasAgrupacion(
+        capacidadPct: 7.5,
+        irPct: 15,
+        sohPuntos: 3,
+        voltajeV: 0.03,
+      );
+      await prefs.saveTolerancias(t);
+      expect(await prefs.loadTolerancias(), t);
+    });
+
+    test('sin guardar nada, las tolerancias son las de la app', () async {
+      expect(await prefs.loadTolerancias(), const ToleranciasAgrupacion());
+    });
+
+    test('una tolerancia corrupta cae a los valores por defecto', () async {
+      final db2 = await DatabaseHelper.instance.database;
+      await db2.insert(
+        DatabaseHelper.tablePrefs,
+        {'key': 'tolerancias_agrupacion', 'value': '{"capacidadPct": "ocho"}'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      // Lo ilegible se sustituye por el valor por defecto; no revienta.
+      expect(await prefs.loadTolerancias(), const ToleranciasAgrupacion());
     });
   });
 }

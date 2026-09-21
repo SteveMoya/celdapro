@@ -16,7 +16,7 @@
 | **M2 — Etiquetas con código de barras** (generar, imprimir, escanear) | ✅ Hecho en v0.3.0 |
 | **M3 — Informes PDF** (celda, lote, inventario) | ✅ Hecho en v0.4.0 |
 | **M4 — Trabajo por lote** (entrada masiva de tests, varias fotos) | ✅ Hecho en v0.5.0–v0.6.0 (test masivo, fotos, duplicar y acciones en bloque) |
-| **M5 — Calidad y escala** (tests de la BD, paginación, filtros) | ✅ Hecho en v0.7.0 (capa de datos probada, paginación, rangos; faltan filtros guardados) |
+| **M5 — Calidad y escala** (tests de la BD, paginación, filtros) | ✅ Hecho en v0.7.0 y v0.10.0 (capa de datos probada, paginación, rangos y filtros guardados) |
 | **M6 — Distribución** (keystore real + CI de release) | ✅ Hecho en v0.8.0: keystore creado, APK firmado de verdad y secretos cargados; 🟡 falta subir los workflows (PAT sin scope `workflow`) |
 
 ---

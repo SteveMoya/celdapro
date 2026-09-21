@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../state/celda_controller.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../inventory/inventory_screen.dart';
 import '../lotes/lote_list_screen.dart';
+import '../packs/agrupacion_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// Contenedor principal con navegación inferior.
@@ -46,7 +48,26 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
+      appBar: AppBar(
+        title: Text(_titles[_index]),
+        actions: [
+          // Agrupar para packs tiene sentido sobre el inventario: se agrupa lo
+          // que cumpla el filtro que el usuario tenga puesto en ese momento.
+          if (_index == 1)
+            IconButton(
+              tooltip: 'Agrupar para packs',
+              icon: const Icon(Icons.grid_view_rounded),
+              onPressed: () {
+                final filtro = context.read<CeldaController>().filter;
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => AgrupacionScreen(filtro: filtro),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
       body: ChangeNotifierProvider<ValueNotifier<int>>.value(
         value: _tab,
         child: IndexedStack(
