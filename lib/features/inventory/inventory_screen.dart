@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/batch_session.dart';
 import '../../core/cell_code.dart';
 import '../../core/classification.dart';
 import '../../data/models/celda.dart';
@@ -27,13 +26,33 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   final _searchCtrl = TextEditingController();
+  final _scroll = ScrollController();
   CellState? _estado;
   Verdict? _veredicto;
 
   @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_alLlegarAlFinal);
+  }
+
+  @override
   void dispose() {
+    _scroll.removeListener(_alLlegarAlFinal);
+    _scroll.dispose();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// Al acercarse al final de la lista, trae la siguiente tanda.
+  ///
+  /// Es lo que permite tener miles de celdas sin cargarlas todas de golpe.
+  void _alLlegarAlFinal() {
+    if (!_scroll.hasClients) return;
+    final restante = _scroll.position.maxScrollExtent - _scroll.position.pixels;
+    if (restante < 400) {
+      context.read<CeldaController>().cargarMas();
+    }
   }
 
   void _apply() {
@@ -127,7 +146,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           const SizedBox(height: 4),
 
           // Aviso de celdas pendientes: el atajo al registro en serie.
-          if (!c.loading && _pendientes(c) > 0)
+          if (!c.loading && c.pendientesDeMedir > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: SizedBox(
@@ -136,9 +155,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   onPressed: () => _testMasivo(context, c),
                   icon: const Icon(Icons.playlist_add_check, size: 20),
                   label: Text(
-                    _pendientes(c) == 1
+                    c.pendientesDeMedir == 1
                         ? '1 celda pendiente de medir'
-                        : '${_pendientes(c)} celdas pendientes de medir',
+                        : '${c.pendientesDeMedir} celdas pendientes de medir',
                   ),
                 ),
               ),
@@ -163,11 +182,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     : RefreshIndicator(
                         onRefresh: c.refresh,
                         child: ListView.separated(
+                          controller: _scroll,
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                          itemCount: c.celdas.length,
+                          // Una fila extra al final para el aviso de carga.
+                          itemCount: c.celdas.length + (c.hayMas ? 1 : 0),
                           separatorBuilder: (_, _) => const SizedBox(height: 6),
-                          itemBuilder: (context, i) =>
-                              _CeldaTile(celda: c.celdas[i]),
+                          itemBuilder: (context, i) {
+                            if (i >= c.celdas.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                ),
+                              );
+                            }
+                            return _CeldaTile(celda: c.celdas[i]);
+                          },
                         ),
                       ),
           ),
@@ -215,13 +250,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  /// Celdas de la vista actual que aún no tienen medición.
-  static int _pendientes(CeldaController c) =>
-      BatchSession.pendientesDe(c.celdas).length;
-
   /// Abre el registro de mediciones en serie con las celdas pendientes.
+  ///
+  /// Las pendientes se piden a la base con el filtro actual: con paginación,
+  /// la lista en pantalla es solo una parte del inventario.
   Future<void> _testMasivo(BuildContext context, CeldaController c) async {
-    final lista = BatchSession.pendientesDe(c.celdas);
+    final lista = await c.celdasSinMedir();
+    if (!context.mounted) return;
     if (lista.isEmpty) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(

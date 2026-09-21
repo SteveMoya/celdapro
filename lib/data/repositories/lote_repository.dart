@@ -54,6 +54,24 @@ class LoteRepository {
     return rows.isEmpty ? null : Lote.fromMap(rows.first);
   }
 
+  /// ¿Existe ya un lote con este código?
+  ///
+  /// [exceptId] permite editar el propio lote sin que su código cuente como
+  /// repetido.
+  Future<bool> existsCodigo(String codigo, {int? exceptId}) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      DatabaseHelper.tableLotes,
+      columns: ['id'],
+      where: exceptId == null
+          ? 'codigo = ?'
+          : 'codigo = ? AND id != ?',
+      whereArgs: exceptId == null ? [codigo] : [codigo, exceptId],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
   /// Códigos de lote existentes (para sugerir el siguiente).
   Future<List<String>> codigos() async {
     final db = await _db.database;

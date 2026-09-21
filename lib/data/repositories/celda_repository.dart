@@ -9,6 +9,10 @@ class CeldaFilter {
     this.estado,
     this.veredicto,
     this.loteId,
+    this.sohMin,
+    this.sohMax,
+    this.capacidadMin,
+    this.capacidadMax,
   });
 
   final String? texto;
@@ -16,11 +20,49 @@ class CeldaFilter {
   final Verdict? veredicto;
   final int? loteId;
 
+  /// Rango de SoH (%). Solo entran las celdas que ya tienen medición.
+  final double? sohMin;
+  final double? sohMax;
+
+  /// Rango de capacidad nominal (mAh).
+  final double? capacidadMin;
+  final double? capacidadMax;
+
   bool get isEmpty =>
       (texto == null || texto!.trim().isEmpty) &&
       estado == null &&
       veredicto == null &&
-      loteId == null;
+      loteId == null &&
+      sohMin == null &&
+      sohMax == null &&
+      capacidadMin == null &&
+      capacidadMax == null;
+
+  /// ¿Hay algún filtro por rango puesto?
+  bool get tieneRangos =>
+      sohMin != null || sohMax != null || capacidadMin != null || capacidadMax != null;
+
+  CeldaFilter copyWith({
+    String? texto,
+    CellState? estado,
+    Verdict? veredicto,
+    int? loteId,
+    double? sohMin,
+    double? sohMax,
+    double? capacidadMin,
+    double? capacidadMax,
+    bool limpiarRangos = false,
+  }) =>
+      CeldaFilter(
+        texto: texto ?? this.texto,
+        estado: estado ?? this.estado,
+        veredicto: veredicto ?? this.veredicto,
+        loteId: loteId ?? this.loteId,
+        sohMin: limpiarRangos ? null : (sohMin ?? this.sohMin),
+        sohMax: limpiarRangos ? null : (sohMax ?? this.sohMax),
+        capacidadMin: limpiarRangos ? null : (capacidadMin ?? this.capacidadMin),
+        capacidadMax: limpiarRangos ? null : (capacidadMax ?? this.capacidadMax),
+      );
 }
 
 /// CRUD y consultas de celdas.
@@ -86,6 +128,73 @@ class CeldaRepository {
     String orderBy = 'codigo_interno ASC',
   }) async {
     final db = await _db.database;
+    final (where, args) = _condiciones(filter);
+    final rows = await db.query(
+      DatabaseHelper.tableCeldas,
+      where: where,
+      whereArgs: args,
+      orderBy: orderBy,
+    );
+    return rows.map(Celda.fromMap).toList();
+  }
+
+  /// Una página del inventario.
+  ///
+  /// Con miles de celdas, traerlas todas de golpe al abrir la lista hace que
+  /// la app tarde y gaste memoria sin necesidad: solo se ven las primeras.
+  /// Devuelve [limite] filas a partir de [desplazamiento].
+  Future<List<Celda>> pagina({
+    CeldaFilter filter = const CeldaFilter(),
+    String orderBy = 'codigo_interno ASC',
+    required int limite,
+    int desplazamiento = 0,
+  }) async {
+    final db = await _db.database;
+    final (where, args) = _condiciones(filter);
+    final rows = await db.query(
+      DatabaseHelper.tableCeldas,
+      where: where,
+      whereArgs: args,
+      orderBy: orderBy,
+      limit: limite,
+      offset: desplazamiento,
+    );
+    return rows.map(Celda.fromMap).toList();
+  }
+
+  /// Cuántas celdas cumplen el filtro (para saber si hay más páginas).
+  Future<int> contar({CeldaFilter filter = const CeldaFilter()}) async {
+    final db = await _db.database;
+    final (where, args) = _condiciones(filter);
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS n FROM ${DatabaseHelper.tableCeldas}'
+      '${where == null ? '' : ' WHERE $where'}',
+      args,
+    );
+    return (rows.first['n'] as int?) ?? 0;
+  }
+
+  /// Las celdas que todavía no tienen medición (para el registro en serie).
+  ///
+  /// Se resuelve en la base y no sobre la lista cargada: con paginación, la
+  /// lista en memoria es solo una parte del inventario.
+  Future<List<Celda>> sinMedir({
+    CeldaFilter filter = const CeldaFilter(),
+  }) async {
+    final db = await _db.database;
+    final (where, args) = _condiciones(filter);
+    final rows = await db.query(
+      DatabaseHelper.tableCeldas,
+      where: where == null ? 'soh_pct IS NULL' : '($where) AND soh_pct IS NULL',
+      whereArgs: args,
+      orderBy: 'codigo_interno ASC',
+    );
+    return rows.map(Celda.fromMap).toList();
+  }
+
+  /// Traduce el filtro a SQL. Devuelve (condición, argumentos); la condición
+  /// es null cuando no hay nada que filtrar.
+  (String?, List<Object?>?) _condiciones(CeldaFilter filter) {
     final where = <String>[];
     final args = <Object?>[];
 
@@ -109,14 +218,26 @@ class CeldaRepository {
       where.add('lote_id = ?');
       args.add(filter.loteId);
     }
+    // Los rangos sobre el SoH solo tienen sentido en celdas ya medidas.
+    if (filter.sohMin != null) {
+      where.add('soh_pct IS NOT NULL AND soh_pct >= ?');
+      args.add(filter.sohMin);
+    }
+    if (filter.sohMax != null) {
+      where.add('soh_pct IS NOT NULL AND soh_pct <= ?');
+      args.add(filter.sohMax);
+    }
+    if (filter.capacidadMin != null) {
+      where.add('capacidad_nominal_mah IS NOT NULL AND capacidad_nominal_mah >= ?');
+      args.add(filter.capacidadMin);
+    }
+    if (filter.capacidadMax != null) {
+      where.add('capacidad_nominal_mah IS NOT NULL AND capacidad_nominal_mah <= ?');
+      args.add(filter.capacidadMax);
+    }
 
-    final rows = await db.query(
-      DatabaseHelper.tableCeldas,
-      where: where.isEmpty ? null : where.join(' AND '),
-      whereArgs: args.isEmpty ? null : args,
-      orderBy: orderBy,
-    );
-    return rows.map(Celda.fromMap).toList();
+    return (where.isEmpty ? null : where.join(' AND '),
+        args.isEmpty ? null : args);
   }
 
   Future<List<Celda>> byLote(int loteId) =>

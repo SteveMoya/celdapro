@@ -26,6 +26,7 @@ void main() {
   CeldaController fake({
     List<Celda> celdas = const [],
     int total = 0,
+    int pendientes = 0,
     Map<Verdict, int> porVeredicto = const {},
     Map<CellState, int> porEstado = const {},
     double? avgSoh,
@@ -34,6 +35,9 @@ void main() {
     c.loading = false;
     c.celdas = celdas;
     c.total = total;
+    // El aviso de pendientes lo cuenta la base, no la lista cargada.
+    c.pendientesDeMedir = pendientes;
+    c.totalFiltrado = celdas.length;
     c.countsByVeredicto = porVeredicto;
     c.countsByEstado = porEstado;
     c.avgSoh = avgSoh;
@@ -159,6 +163,7 @@ void main() {
     phone(tester);
     final c = fake(
       total: 3,
+      pendientes: 2,
       celdas: [
         Celda(
           id: 1,

@@ -88,8 +88,9 @@ class _LoteFormScreenState extends State<LoteFormScreen> {
                 labelText: 'Código del lote *',
                 prefixIcon: Icon(Icons.qr_code_2),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Pon un código' : null,
+              onTapOutside: (_) => _revisarCodigo(),
+              onEditingComplete: _revisarCodigo,
+              validator: _validarCodigo,
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -210,6 +211,32 @@ class _LoteFormScreenState extends State<LoteFormScreen> {
     if (saved == true && mounted) {
       await context.read<CeldaController>().refresh();
     }
+  }
+
+  /// Comprueba el código antes de guardar.
+  ///
+  /// Además de exigirlo, avisa si ya existe otro lote con ese código: la base
+  /// también lo impide, pero un aviso en el formulario es más útil que un
+  /// error de SQLite.
+  String? _validarCodigo(String? v) {
+    final codigo = (v ?? '').trim();
+    if (codigo.isEmpty) return 'Pon un código';
+    if (_codigoDuplicado) return 'Ya existe un lote con ese código';
+    return null;
+  }
+
+  /// Marca si el código escrito ya está en uso (se revisa al salir del campo).
+  bool _codigoDuplicado = false;
+
+  Future<void> _revisarCodigo() async {
+    final codigo = _codigoCtrl.text.trim();
+    if (codigo.isEmpty) return;
+    final existe = await context.read<CeldaController>().loteCodigoExiste(
+          codigo,
+          exceptId: widget.lote?.id,
+        );
+    if (!mounted) return;
+    setState(() => _codigoDuplicado = existe);
   }
 
   Future<void> _save() async {

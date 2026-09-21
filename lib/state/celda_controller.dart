@@ -46,6 +46,24 @@ class CeldaController extends ChangeNotifier {
   bool loading = true;
   CeldaFilter filter = const CeldaFilter();
 
+  /// Cuántas celdas se cargan de una vez al abrir el inventario.
+  ///
+  /// Con miles de celdas, traerlas todas al abrir hace que la app tarde y
+  /// gaste memoria: se cargan por tandas y se piden más al bajar por la lista.
+  static const tamanoPagina = 100;
+
+  /// Cuántas celdas cumplen el filtro actual en total (no solo las cargadas).
+  int totalFiltrado = 0;
+
+  /// ¿Quedan celdas por traer con el filtro actual?
+  bool get hayMas => celdas.length < totalFiltrado;
+
+  /// ¿Se está trayendo otra tanda? (para no pedir dos veces la misma)
+  bool cargandoMas = false;
+
+  /// Celdas sin medición que cumplen el filtro (contadas en la base).
+  int pendientesDeMedir = 0;
+
   Thresholds thresholds = const Thresholds();
   List<String> rejectReasons = PreferencesStore.defaultRejectReasons;
 
@@ -104,7 +122,13 @@ class CeldaController extends ChangeNotifier {
     loading = true;
     notifyListeners();
 
-    celdas = await _celdas.all(filter: filter);
+    celdas = await _celdas.pagina(
+      filter: filter,
+      limite: tamanoPagina,
+    );
+    totalFiltrado = await _celdas.contar(filter: filter);
+    pendientesDeMedir = (await _celdas.sinMedir(filter: filter)).length;
+
     lotes = await _lotes.all();
     countsByEstado = await _celdas.countByEstado();
     countsByVeredicto = await _celdas.countByVeredicto();
@@ -114,6 +138,34 @@ class CeldaController extends ChangeNotifier {
     loading = false;
     notifyListeners();
   }
+
+  /// Trae la siguiente tanda de celdas (al llegar al final de la lista).
+  ///
+  /// Devuelve cuántas añadió. No hace nada si ya está cargando o si no quedan.
+  Future<int> cargarMas() async {
+    if (loading || cargandoMas || !hayMas) return 0;
+    cargandoMas = true;
+    notifyListeners();
+    try {
+      final siguiente = await _celdas.pagina(
+        filter: filter,
+        limite: tamanoPagina,
+        desplazamiento: celdas.length,
+      );
+      celdas = [...celdas, ...siguiente];
+      return siguiente.length;
+    } finally {
+      cargandoMas = false;
+      notifyListeners();
+    }
+  }
+
+  /// Todas las celdas que aún no tienen medición con el filtro actual.
+  ///
+  /// Se consulta la base en vez de la lista cargada: con paginación, la lista
+  /// en memoria es solo una parte del inventario y el registro en serie debe
+  /// recorrer **todas** las pendientes, no solo las visibles.
+  Future<List<Celda>> celdasSinMedir() => _celdas.sinMedir(filter: filter);
 
   Future<void> setFilter(CeldaFilter f) async {
     filter = f;
@@ -495,6 +547,10 @@ class CeldaController extends ChangeNotifier {
   }
 
   // ---------- Lotes ----------
+
+  /// ¿Existe ya un lote con este código? (para avisar antes de guardar)
+  Future<bool> loteCodigoExiste(String codigo, {int? exceptId}) =>
+      _lotes.existsCodigo(codigo, exceptId: exceptId);
 
   Future<int> addLote(Lote lote) async {
     final id = await _lotes.insert(lote);

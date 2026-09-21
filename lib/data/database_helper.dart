@@ -7,7 +7,7 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static const _dbName = 'celdapro.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
 
   static const tableLotes = 'lotes';
   static const tableCeldas = 'celdas';
@@ -18,7 +18,18 @@ class DatabaseHelper {
 
   Database? _db;
 
-  Future<Database> get database async => _db ??= await _open();
+  /// Base de datos alternativa para las pruebas (SQLite en memoria).
+  ///
+  /// En los tests no existe el almacenamiento de Android, así que se le pasa
+  /// una base ya abierta: así se prueban los repositorios, los filtros y las
+  /// migraciones contra SQLite **de verdad**, no contra dobles.
+  static Database? baseDePruebas;
+
+  Future<Database> get database async {
+    final pruebas = baseDePruebas;
+    if (pruebas != null) return pruebas;
+    return _db ??= await _open();
+  }
 
   /// Ruta del archivo de base de datos en el dispositivo.
   static Future<String> ruta() async =>
@@ -29,6 +40,12 @@ class DatabaseHelper {
   /// Se usa antes de un respaldo o una restauración: copiar un SQLite abierto
   /// puede dar un archivo a medias.
   Future<void> cerrar() async {
+    final pruebas = baseDePruebas;
+    if (pruebas != null) {
+      await pruebas.close();
+      baseDePruebas = null;
+      return;
+    }
     await _db?.close();
     _db = null;
   }
@@ -54,42 +71,97 @@ class DatabaseHelper {
 
   Future<Database> _open() async {
     final dir = await getDatabasesPath();
-    final path = p.join(dir, _dbName);
-    return openDatabase(
-      path,
-      version: _dbVersion,
-      onConfigure: (db) async {
-        // Integridad referencial (necesario activarlo explícitamente en SQLite).
-        await db.execute('PRAGMA foreign_keys = ON');
-      },
-      onCreate: (db, version) async => _createAll(db),
-      onUpgrade: (db, oldVersion, newVersion) async {
-        // v2: referencia del catálogo de celdas y resistencia interna nominal.
-        if (oldVersion < 2) {
-          await db.execute(
-            'ALTER TABLE $tableCeldas ADD COLUMN catalog_ref TEXT',
-          );
-          await db.execute(
-            'ALTER TABLE $tableCeldas ADD COLUMN ir_nominal_mohm REAL',
-          );
-        }
-        // v3: varias fotos por celda, con etiqueta.
-        if (oldVersion < 3) {
-          await _crearTablaFotos(db);
-          // La foto que ya existía pasa a ser la primera de la galería, para
-          // que nadie pierda la evidencia que ya tenía registrada.
-          await db.execute('''
-            INSERT INTO $tableFotos (celda_id, path, etiqueta, fecha)
-            SELECT id, foto_path, 'evidence', created_at
-            FROM $tableCeldas
-            WHERE foto_path IS NOT NULL AND foto_path != ''
-          ''');
-        }
-      },
+    return abrirEn(p.join(dir, _dbName));
+  }
+
+  /// Abre la base en [ruta] creándola o migrándola como corresponde.
+  ///
+  /// Está separado de [database] para poder abrir una base **concreta** en los
+  /// tests (un archivo con el esquema viejo) y comprobar que la migración real
+  /// conserva los datos, en vez de probar una copia de la migración.
+  static Future<Database> abrirEn(String ruta) => openDatabase(
+        ruta,
+        version: _dbVersion,
+        onConfigure: (db) async {
+          // Integridad referencial (necesario activarlo en SQLite).
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: (db, version) async => _createAll(db),
+        onUpgrade: (db, oldVersion, newVersion) async =>
+            _actualizar(db, oldVersion),
+      );
+
+  /// Migraciones, en orden. Cada bloque comprueba desde qué versión viene.
+  static Future<void> _actualizar(Database db, int oldVersion) async {
+    // v2: referencia del catálogo de celdas y resistencia interna nominal.
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE $tableCeldas ADD COLUMN catalog_ref TEXT',
+      );
+      await db.execute(
+        'ALTER TABLE $tableCeldas ADD COLUMN ir_nominal_mohm REAL',
+      );
+    }
+    // v3: varias fotos por celda, con etiqueta.
+    if (oldVersion < 3) {
+      await _crearTablaFotos(db);
+      // La foto que ya existía pasa a ser la primera de la galería, para
+      // que nadie pierda la evidencia que ya tenía registrada.
+      await db.execute('''
+        INSERT INTO $tableFotos (celda_id, path, etiqueta, fecha)
+        SELECT id, foto_path, 'evidence', created_at
+        FROM $tableCeldas
+        WHERE foto_path IS NOT NULL AND foto_path != ''
+      ''');
+    }
+    // v4: los códigos de lote no se pueden repetir.
+    if (oldVersion < 4) {
+      // La base vieja podía tener dos lotes con el mismo código (algo que
+      // confunde al taller: dos "L-2026-09-A" distintos). Antes de exigir
+      // unicidad hay que deshacer los que ya chocaban, conservando ambos
+      // lotes en vez de borrar ninguno.
+      await _liberarCodigosLoteRepetidos(db);
+      await _crearIndiceLotesUnico(db);
+    }
+  }
+
+  /// Renombra los códigos de lote repetidos (`X` → `X-2`, `X-3`…) para poder
+  /// exigir unicidad sin perder ningún lote.
+  static Future<void> _liberarCodigosLoteRepetidos(Database db) async {
+    final filas = await db.query(
+      tableLotes,
+      columns: ['id', 'codigo'],
+      orderBy: 'id ASC',
+    );
+    final usados = <String>{};
+    for (final fila in filas) {
+      final id = fila['id'] as int;
+      final codigo = (fila['codigo'] as String?) ?? '';
+      // El primero con ese código se queda como está.
+      if (usados.add(codigo)) continue;
+      var n = 2;
+      var candidato = '$codigo-$n';
+      while (!usados.add(candidato)) {
+        n++;
+        candidato = '$codigo-$n';
+      }
+      await db.update(
+        tableLotes,
+        {'codigo': candidato},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+  }
+
+  static Future<void> _crearIndiceLotesUnico(Database db) async {
+    await db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_lotes_codigo '
+      'ON $tableLotes(codigo)',
     );
   }
 
-  Future<void> _createAll(Database db) async {
+  static Future<void> _createAll(Database db) async {
     await db.execute('''
       CREATE TABLE $tableLotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +172,9 @@ class DatabaseHelper {
         notas TEXT
       )
     ''');
+    // El código identifica al lote: dos lotes con el mismo código serían
+    // indistinguibles en el taller.
+    await _crearIndiceLotesUnico(db);
 
     await db.execute('''
       CREATE TABLE $tableCeldas (
@@ -173,7 +248,7 @@ class DatabaseHelper {
   }
 
   /// Galería de fotos de evidencia de cada celda.
-  Future<void> _crearTablaFotos(Database db) async {
+  static Future<void> _crearTablaFotos(Database db) async {
     await db.execute('''
       CREATE TABLE $tableFotos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -46,6 +46,8 @@ Flutter 3.47 + Material 3 · SQLite (sqflite) · etiquetas con código de barras
   para entregárselos al cliente.
 - 📊 **Dashboard** con celdas procesadas, % rechazo, SoH promedio y actividad reciente.
 - 📤 **Exportar CSV** e **importar inventario** existente.
+- ⚡ **Ágil con miles de celdas**: el inventario carga por tandas al bajar por la lista, y permite
+  filtrar por rango de SoH y de capacidad además de por texto, etapa, veredicto y lote.
 - 🎨 **Marca propia**: logo, icono y guía de marca en `brand/` (ver [BRAND.md](brand/BRAND.md)).
 
 ## 🔒 Privacidad
@@ -147,8 +149,8 @@ hinchadas, dañadas o sin tensión deben ir a **rechazo/aislamiento**, nunca a r
 
 ## 📋 Estado
 
-MVP completo + marca, respaldo, etiquetas, informes y trabajo por lote (TODO 18). Ver el plan de
-mejoras en `.hermes/plans/2026-09-18-celdapro-mejoras.md`.
+MVP completo + marca, respaldo, etiquetas, informes, trabajo por lote, marca del taller (Pro),
+actualizaciones y escala (TODO 18). Ver el plan de mejoras en
+`.hermes/plans/2026-09-18-celdapro-mejoras.md`.
 
-Pendiente: tests de la capa de datos, acciones en bloque sobre un lote,
-captura de BMS por Bluetooth y armado de packs.
+Pendiente: filtros guardados, captura de BMS por Bluetooth y armado de packs.
